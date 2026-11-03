@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace FrontierDispatch.Core
@@ -16,6 +17,8 @@ namespace FrontierDispatch.Core
         /// Useful for small correctness tests and manual inspection.
         /// </summary>
         public static WorldData CreateSmall() => CreateGrid(5, 5);
+
+        public static WorldData CreateXS() => CreateGrid(2, 3);
 
         /// <summary>
         /// Creates a 50 x 50 grid world.

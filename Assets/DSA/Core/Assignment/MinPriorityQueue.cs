@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FrontierDispatch.Core
 {
@@ -24,6 +25,7 @@ namespace FrontierDispatch.Core
         /// </summary>
         public int Count => _heap.Count;
 
+        #region ENQUEUE / DEQUEUE
         /// <summary>
         /// Adds an item with the supplied priority.
         /// Lower priority values are removed before higher priority values.
@@ -46,10 +48,12 @@ namespace FrontierDispatch.Core
         {
             if (_heap.Count == 0) throw new InvalidOperationException("The queue is empty");
 
-            T rootItem = _heap[0].Item;
+            T rootItem = _heap.First().Item;
             int lastIndex = _heap.Count - 1;
 
-            _heap[0] = _heap[lastIndex];
+            if (lastIndex > 0)
+                _heap[0] = _heap[lastIndex];
+
             _heap.RemoveAt(lastIndex);
 
             if (_heap.Count > 0)
@@ -57,6 +61,7 @@ namespace FrontierDispatch.Core
 
             return rootItem;
         }
+        #endregion
 
         /// <summary>
         /// Returns the minimum-priority item without removing it.
@@ -68,9 +73,10 @@ namespace FrontierDispatch.Core
         public T Peek()
         {
             if (_heap.Count == 0) throw new InvalidOperationException("The queue is empty");
-            return _heap[_heap.Count - 1].Item;
+            return _heap[0].Item;
         }
 
+        #region QUEUE ORDER MOVEMENT
         /// <summary>
         /// Moves the item with Larger priority Up the heap
         /// </summary>
@@ -80,7 +86,9 @@ namespace FrontierDispatch.Core
             {
                 int parentIndex = (index - 1) / 2;
 
+                #region Given Smaller Prio Check
                 bool givenHasLargerPriority = _heap[index].Priority.CompareTo(_heap[parentIndex].Priority) >= 0;
+                #endregion
 
                 if (givenHasLargerPriority)
                     break;
@@ -90,12 +98,9 @@ namespace FrontierDispatch.Core
             }
         }
 
-
-
         /// <summary>
         /// Moves the item with Smaller priority Down the heap
         /// </summary>
-
         private void MoveDown(int index)
         {
             int lastIndex = _heap.Count - 1;
@@ -105,25 +110,35 @@ namespace FrontierDispatch.Core
                 int rightChildIndex = (index * 2) + 2;
                 int smallest = index;
 
-                bool leftHasSmallerPriority = (leftChildIndex <= lastIndex &&
-                                               _heap[leftChildIndex].Priority.CompareTo(_heap[smallest].Priority) < 0);
-                bool rightHasSmallerPriority = (rightChildIndex <= lastIndex &&
-                                                _heap[rightChildIndex].Priority.CompareTo(_heap[smallest].Priority) < 0);
-                bool givenHasSmallerPriority = (smallest == index);
+                #region Left Smaller Prio Check
+                bool leftHasSmallerPriority = (leftChildIndex <= lastIndex && 
+                                                _heap[leftChildIndex].Priority.CompareTo(_heap[smallest].Priority) < 0);
+                #endregion
 
                 if (leftHasSmallerPriority)
                     smallest = leftChildIndex;
 
+                #region Right Smaller Prio Check
+                bool rightHasSmallerPriority = (rightChildIndex <= lastIndex && 
+                                                _heap[rightChildIndex].Priority.CompareTo(_heap[smallest].Priority) < 0);
+                #endregion
+
                 if (rightHasSmallerPriority)
                     smallest = rightChildIndex;
 
+                #region Given Smaller Prio Check
+                bool givenHasSmallerPriority = (smallest == index);
+                #endregion
+
                 if (givenHasSmallerPriority)
                     break;
-
+                
                 SwapItems(index, smallest);
                 index = smallest;
             }
         }
+        #endregion
+
         /// <summary>
         /// Swaps two items by two given indices within the heap
         /// </summary>
@@ -134,6 +149,7 @@ namespace FrontierDispatch.Core
             _heap[newIndex] = tempEntry;
         }
 
+        #region HEAP ENTRY STRUCTURE
         /// <summary>
         /// Stores one item together with the priority used by the heap.
         /// </summary>
@@ -148,5 +164,6 @@ namespace FrontierDispatch.Core
             public T Item { get; }
             public int Priority { get; }
         }
+        #endregion
     }
 }

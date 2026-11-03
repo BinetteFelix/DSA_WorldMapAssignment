@@ -19,6 +19,26 @@ Console.WriteLine($"Find 734: {queries.FindLocationById(734)?.Name ?? "missing"}
 Console.WriteLine();
 Console.WriteLine("Run with --baseline to record the supplied baseline workload.");
 
+WorldData world1 = WorldDatasetFactory.CreateXS();
+MinPriorityQueue<Location> locQ = new MinPriorityQueue<Location>();
+
+for (int i = 0; i < world1.Locations.Count; i++)
+{
+    Random rand = new Random();
+    int randomPrio = rand.Next(1, 26);
+
+    locQ.Enqueue(world1.Locations[i], randomPrio);
+    Console.WriteLine($"ID: {world1.Locations[i].Id} Prio: {randomPrio}");
+}
+
+Console.WriteLine($"\nTotal count after insertion: {locQ.Count}");
+Console.WriteLine($"Peek lowest priority: '{locQ.Peek().Id}'\n");
+
+while (locQ.Count > 0)
+{
+    Location loc = locQ.Dequeue();
+    Console.WriteLine($"-> processed: {loc.Id}");
+}
 static void RunBaseline()
 {
     // Build the dataset before timing the repeated runtime queries.
