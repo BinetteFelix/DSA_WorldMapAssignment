@@ -5,9 +5,14 @@ Keep this concise and specific to your implementation.
 ## 1. Initial analysis
 
 - How are locations and connections represented in the baseline?
+Locations are represented as 4 variable types, consisting of an id, a name, a world position and the type of location
+Connections are represented by 3 variables of type int, the first being a from-location id, and the second being to-location id, and third travel cost.
 - Which operations appear frequent?
+The creation of new locations and connections seem frequent
 - Which operation(s) do you predict may scale poorly?
+Some operations that may scale poorly are, CreateSmall() method of sample world factory, this method creates hard coded locations and connections, meaning its not scalable at all, and the
 - What will you investigate first?
+I will investigate the create world methods and see how they are constructed in the world dataset factory class.
 
 ## 2. Data representation
 
@@ -46,3 +51,4 @@ Briefly describe relevant assistance, if any.
 ## 9. VG extension
 
 Only if attempting VG: heuristic, traversal constraints, correctness, and Dijkstra/A* comparison.
+
