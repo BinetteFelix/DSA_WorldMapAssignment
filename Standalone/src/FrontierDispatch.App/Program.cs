@@ -22,6 +22,7 @@ Console.WriteLine("Run with --baseline to record the supplied baseline workload.
 WorldData world1 = WorldDatasetFactory.CreateXS();
 MinPriorityQueue<Location> locQ = new MinPriorityQueue<Location>();
 
+
 for (int i = 0; i < world1.Locations.Count; i++)
 {
     Random rand = new Random();
@@ -38,6 +39,13 @@ while (locQ.Count > 0)
 {
     Location loc = locQ.Dequeue();
     Console.WriteLine($"-> processed: {loc.Id}");
+}
+
+RunRouteFinder();
+
+ void RunRouteFinder()
+{
+    DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(world1);
 }
 static void RunBaseline()
 {
