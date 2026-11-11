@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FrontierDispatch.Core
 {
@@ -48,7 +47,7 @@ namespace FrontierDispatch.Core
         {
             if (_heap.Count == 0) throw new InvalidOperationException("The queue is empty");
 
-            T rootItem = _heap.First().Item;
+            T rootItem = _heap[0].Item;
             int lastIndex = _heap.Count - 1;
 
             if (lastIndex > 0)

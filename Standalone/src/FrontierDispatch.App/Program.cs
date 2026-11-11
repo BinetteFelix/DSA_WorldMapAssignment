@@ -43,9 +43,34 @@ while (locQ.Count > 0)
 
 RunRouteFinder();
 
- void RunRouteFinder()
+static void RunRouteFinder()
 {
-    DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(world1);
+    Console.WriteLine();
+    Console.WriteLine("--- Dijkstra's route finder ---");
+    Console.WriteLine();
+    var worlds = new (string Name, WorldData Data)[]
+    {
+        ("XS", WorldDatasetFactory.CreateXS()),
+        ("Small", WorldDatasetFactory.CreateSmall()),
+        ("Medium", WorldDatasetFactory.CreateMedium()),
+        ("Large", WorldDatasetFactory.CreateLarge())
+    };
+
+    foreach (var (name, world) in worlds)
+    {
+        WorldQueries queries = new WorldQueries(world);
+        DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(world, queries);
+        int startID = 0;
+        int goalID = world.Locations.Count - 1;
+
+        RouteResult result = routeFinder.FindRoute(startID, goalID);
+
+        Console.WriteLine($"{name}: Found={result.Found}, Cost={result.TotalCost}, Expanded={result.ExpandedCount}");
+        if (result.LocationIds.Count <= 25)
+        {
+            Console.WriteLine($"    Path: {string.Join("->", result.LocationIds)}");
+        }
+    }
 }
 static void RunBaseline()
 {

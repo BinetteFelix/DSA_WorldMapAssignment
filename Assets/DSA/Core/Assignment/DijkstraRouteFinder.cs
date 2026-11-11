@@ -34,12 +34,21 @@ namespace FrontierDispatch.Core
 
             foreach (var location in _world.Locations)
             {
-                if (_validLocationIDs.Add(location.Id))
-                    continue;
-                _adjecencyList[location.Id] = new List<Connection>();
+                _validLocationIDs.Add(location.Id);
+                if (!_adjecencyList.ContainsKey(location.Id))
+                    _adjecencyList[location.Id] = new List<Connection>();
             }
             foreach (var connection in world.Connections)
-                _adjecencyList.Add(connection.FromLocationId, _worldQueries.FindOutgoingConnections(connection.FromLocationId).ToList());
+            {
+                if (_adjecencyList.TryGetValue(connection.FromLocationId, out var list))
+                {
+                    //list = new List<Connection>();
+                    //_adjecencyList[connection.FromLocationId] = list;
+                    list.Add(connection);
+                }
+                //_adjecencyList.Add(connection.FromLocationId, _worldQueries.FindOutgoingConnections(connection.FromLocationId).ToList());
+            }
+                
         }
 
         /// <summary>
@@ -51,9 +60,88 @@ namespace FrontierDispatch.Core
         /// </summary>
         public RouteResult FindRoute(int startLocationId, int goalLocationId)
         {
-            // TODO: implement Dijkstra using your prepared world representation
-            // and MinPriorityQueue<T>.
-            throw new NotImplementedException();
+            if (!_validLocationIDs.Contains(startLocationId) || !_validLocationIDs.Contains(goalLocationId))
+                return new RouteResult(found: false, 
+                    Array.Empty<int>(), 
+                    totalCost: 0, 
+                    expandedCount: 0);
+
+            if (startLocationId == goalLocationId)
+                return new RouteResult(found: true, 
+                    new[] {startLocationId}, 
+                    totalCost: 0, 
+                    expandedCount: 0
+                );
+
+            Dictionary<int, int> distances = new Dictionary<int, int>();
+            Dictionary<int, int> previousNode = new Dictionary<int, int>();
+            HashSet<int> visited = new HashSet<int>();
+            MinPriorityQueue<int> prioQueue = new MinPriorityQueue<int>();
+
+            distances[startLocationId] = 0;
+            prioQueue.Enqueue(startLocationId, 0);
+
+            int expandedCount = 0;
+
+            while(prioQueue.Count > 0)
+            {
+                int currentID = prioQueue.Dequeue();
+
+                if (!visited.Add(currentID))
+                    continue;
+
+                expandedCount++;
+
+                if (currentID == goalLocationId)
+                {
+                    var path = ReconstructPath(previousNode, startLocationId, goalLocationId);
+
+                    return new RouteResult(
+                        found: true,
+                        locationIds: path,
+                        totalCost: distances[goalLocationId],
+                        expandedCount: expandedCount
+                    );
+                }
+
+                int currentDistance = distances[currentID];
+
+                if (_adjecencyList.TryGetValue(currentID, out var edges))
+                {
+                    foreach (Connection? edge in _adjecencyList[currentID])
+                    {
+                        if (visited.Contains(edge.ToLocationId))
+                            continue;
+                        int newDistance = currentDistance + edge.TravelCost;
+
+                        if (!distances.TryGetValue(edge.ToLocationId, out int existingDistance) || newDistance < existingDistance)
+                        {
+                            distances[edge.ToLocationId] = newDistance;
+                            previousNode[edge.ToLocationId] = currentID;
+                            prioQueue.Enqueue(edge.ToLocationId, newDistance);
+                        }
+                    }
+                }
+            }
+            return new RouteResult(found: false,
+                    Array.Empty<int>(),
+                    totalCost: 0,
+                    expandedCount: expandedCount);
+        }
+        private static IReadOnlyList<int> ReconstructPath(Dictionary<int, int> previousNode, int startID, int goalID)
+        {
+            var path = new List<int>();
+            int current = goalID;
+
+            while (current != startID)
+            {
+                path.Add(current);
+                current = previousNode[current];
+            }
+
+            path.Add(startID);
+            path.Reverse();
+            return path;
         }
     }
 }
