@@ -12,11 +12,17 @@ namespace FrontierDispatch.Unity
         private WorldData? _world;
         private WorldQueries? _queries;
         private string _idText = "734";
+
+        private string _startIDText = "500";
+        private string _goalIDText = "1968";
+
         private string _status = "Baseline lookup uses a linear scan.";
+
+        float updateInterval = 0.2f;
 
         private void Start()
         {
-            _world = SampleWorldFactory.CreateSmall();
+            _world = WorldDatasetFactory.CreateMedium();
             _queries = new WorldQueries(_world);
 
             for (int i = 0; i < _world.Locations.Count; ++i)
@@ -47,6 +53,10 @@ namespace FrontierDispatch.Unity
                 lr.endColor = Color.gray;
             }
         }
+        private void Update()
+        {
+            updateInterval -= Time.deltaTime;
+        }
 
         private void ResetColors()
         {
@@ -71,7 +81,23 @@ namespace FrontierDispatch.Unity
             int outgoing = _queries.FindOutgoingConnections(id).Count;
             _status = $"Found {location.Name}. Outgoing connections: {outgoing}. Baseline queries scan the stored collections.";
         }
+        private void FindShortestPath(int startLocationID, int goalLocationID)
+        {
+            DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(_world);
+            RouteResult routeResult = routeFinder.FindRoute(startLocationID, goalLocationID);
 
+            ResetColors();
+
+            for (int i = 0; i < routeResult.LocationIds.Count; i++)
+            {
+                /*if (updateInterval < 0)
+                {
+                    updateInterval = 0.2f;
+                    _views[routeResult.LocationIds[i]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+                }*/
+                _views[routeResult.LocationIds[i]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+            }
+        }
         private void OnGUI()
         {
             GUILayout.BeginArea(new Rect(20f, 20f, 500f, 245f), GUI.skin.box);
@@ -80,10 +106,15 @@ namespace FrontierDispatch.Unity
             GUILayout.Label("Location ID:");
             _idText = GUILayout.TextField(_idText);
             if (GUILayout.Button("Find location + outgoing connections")) Find();
+            _startIDText = GUILayout.TextField(_startIDText);
+            _goalIDText = GUILayout.TextField(_goalIDText);
+
+            if (GUILayout.Button("Find shortest path")) FindShortestPath(int.Parse(_startIDText), int.Parse(_goalIDText));
             GUILayout.Space(10f);
             GUILayout.Label(_status);
             GUILayout.Label("Students are assessed on the headless C# system. Unity visualization is optional.");
             GUILayout.EndArea();
+            
         }
     }
 }

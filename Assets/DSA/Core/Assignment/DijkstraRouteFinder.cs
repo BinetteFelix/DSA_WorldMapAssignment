@@ -19,15 +19,13 @@ namespace FrontierDispatch.Core
         private readonly WorldData _world;
         private readonly Dictionary<int, List<Connection>> _adjecencyList;
         private readonly HashSet<int> _validLocationIDs;
-        private readonly WorldQueries _worldQueries;
 
         /// <summary>
         /// Constructor. Creates a route finder operating on the supplied world.
         /// </summary>
-        public DijkstraRouteFinder(WorldData world, WorldQueries queries)
+        public DijkstraRouteFinder(WorldData world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
-            _worldQueries = new WorldQueries(_world);
 
             _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
             _validLocationIDs = new HashSet<int>(_world.Locations.Count);
@@ -128,6 +126,10 @@ namespace FrontierDispatch.Core
                     totalCost: 0,
                     expandedCount: expandedCount);
         }
+        /// <summary>
+        /// Returns the list of locations visited to get the shortest path.
+        /// </summary>
+        /// <returns></returns>
         private static IReadOnlyList<int> ReconstructPath(Dictionary<int, int> previousNode, int startID, int goalID)
         {
             var path = new List<int>();

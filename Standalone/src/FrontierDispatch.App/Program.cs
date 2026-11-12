@@ -59,16 +59,18 @@ static void RunRouteFinder()
     foreach (var (name, world) in worlds)
     {
         WorldQueries queries = new WorldQueries(world);
-        DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(world, queries);
+        DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(world);
         int startID = 0;
         int goalID = world.Locations.Count - 1;
 
         RouteResult result = routeFinder.FindRoute(startID, goalID);
 
-        Console.WriteLine($"{name}: Found={result.Found}, Cost={result.TotalCost}, Expanded={result.ExpandedCount}");
+        Console.WriteLine($"{name}: Found = {result.Found}, Cost = {result.TotalCost}, Expanded = {result.ExpandedCount}");
+        Console.WriteLine($"Jumps = {result.LocationIds.Count}");
         if (result.LocationIds.Count <= 25)
         {
             Console.WriteLine($"    Path: {string.Join("->", result.LocationIds)}");
+            Console.WriteLine();
         }
     }
 }
