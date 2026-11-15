@@ -40,11 +40,8 @@ namespace FrontierDispatch.Core
             {
                 if (_adjecencyList.TryGetValue(connection.FromLocationId, out var list))
                 {
-                    //list = new List<Connection>();
-                    //_adjecencyList[connection.FromLocationId] = list;
                     list.Add(connection);
                 }
-                //_adjecencyList.Add(connection.FromLocationId, _worldQueries.FindOutgoingConnections(connection.FromLocationId).ToList());
             }
                 
         }
