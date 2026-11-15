@@ -1,16 +1,23 @@
 #nullable enable
 
-using System.Collections.Generic;
 using FrontierDispatch.Core;
+using FrontierDispatch.Unity.Assets.DSA.Unity;
+using System.Collections.Generic;
+using System.Net.Sockets;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace FrontierDispatch.Unity
 {
     public sealed class WorldMapDemoController : MonoBehaviour
     {
+        [SerializeField] private GameObject _nodePrefab;
+        [SerializeField] private Material edgeMAT;
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private WorldData? _world;
         private WorldQueries? _queries;
+
+        private RouteResult routeResult;
         private string _idText = "734";
 
         private string _startIDText = "500";
@@ -18,17 +25,19 @@ namespace FrontierDispatch.Unity
 
         private string _status = "Baseline lookup uses a linear scan.";
 
-        float updateInterval = 0.2f;
+        private float updateInterval = 0.2f;
+        private int currentNodeIndex;
+        private bool hasRunRouteFinder;
 
         private void Start()
         {
-            _world = WorldDatasetFactory.CreateMedium();
+            _world = WorldDatasetFactory.CreateLarge();
             _queries = new WorldQueries(_world);
 
             for (int i = 0; i < _world.Locations.Count; ++i)
             {
                 Location location = _world.Locations[i];
-                var node = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                var node = Instantiate(_nodePrefab);
                 node.name = $"{location.Id}_{location.Name}";
                 node.transform.position = new Vector3(location.Position.X, 0f, location.Position.Y);
                 node.transform.localScale = Vector3.one * 0.7f;
@@ -48,22 +57,46 @@ namespace FrontierDispatch.Unity
                 lr.SetPosition(1, b.transform.position + Vector3.up * 0.05f);
                 lr.startWidth = 0.08f;
                 lr.endWidth = 0.08f;
-                lr.material = new Material(Shader.Find("Sprites/Default"));
+                lr.material = edgeMAT;
                 lr.startColor = Color.gray;
                 lr.endColor = Color.gray;
+                lr.shadowCastingMode = ShadowCastingMode.Off;
+                lr.receiveShadows = false;
+                road.isStatic = true;
             }
         }
         private void Update()
         {
             updateInterval -= Time.deltaTime;
+
+            if (updateInterval < 0 && hasRunRouteFinder && currentNodeIndex < routeResult.LocationIds.Count)
+            {
+                updateInterval = 0.02f;
+                SelectNode();
+                currentNodeIndex++;
+            }
+            else if (currentNodeIndex >= _views.Count)
+            {
+                hasRunRouteFinder = false;
+                currentNodeIndex = 0;
+                Debug.Log("Reached the goal node!");
+            }
         }
 
+        private void SelectNode()
+        {
+            if (currentNodeIndex >= _views.Count)
+                return;
+            else
+                _views[routeResult.LocationIds[currentNodeIndex]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+        }
         private void ResetColors()
         {
             foreach (GameObject view in _views.Values)
             {
                 view.GetComponent<Renderer>().material.color = new Color(0.45f, 0.65f, 0.85f);
             }
+            hasRunRouteFinder = false;
         }
 
         private void Find()
@@ -83,8 +116,9 @@ namespace FrontierDispatch.Unity
         }
         private void FindShortestPath(int startLocationID, int goalLocationID)
         {
+            currentNodeIndex = 0;
             DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(_world);
-            RouteResult routeResult = routeFinder.FindRoute(startLocationID, goalLocationID);
+            routeResult = routeFinder.FindRoute(startLocationID, goalLocationID);
 
             ResetColors();
 
@@ -95,8 +129,9 @@ namespace FrontierDispatch.Unity
                     updateInterval = 0.2f;
                     _views[routeResult.LocationIds[i]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
                 }*/
-                _views[routeResult.LocationIds[i]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+                
             }
+            hasRunRouteFinder = true;
         }
         private void OnGUI()
         {
