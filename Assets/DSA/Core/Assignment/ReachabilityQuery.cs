@@ -73,7 +73,7 @@ namespace FrontierDispatch.Core
             {
                 int currentID = prioQueue.Dequeue().Item;
 
-                if (visited.Add(currentID))
+                if (!visited.Add(currentID))
                     continue;
 
                 int currentCost = cheapestCosts[currentID];
@@ -88,7 +88,7 @@ namespace FrontierDispatch.Core
                     if (newCost > maxTravelCost)
                         continue;
 
-                    if (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost))
+                    if (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost) || newCost < existingCost)
                     {
                         cheapestCosts[edge.ToLocationId] = newCost;
                         prioQueue.Enqueue(edge.ToLocationId, newCost);

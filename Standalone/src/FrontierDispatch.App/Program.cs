@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using FrontierDispatch.Core;
 
 if (args.Length > 0 && args[0] == "--baseline")
@@ -82,25 +83,28 @@ static void RunReachabilityQuery()
     Console.WriteLine("--- Reachability finder ---");
     Console.WriteLine();
 
-    var worlds = new (string Name, WorldData Data)[]
+    var worlds = new (string Name, WorldData Data, int budget)[]
     {
-        ("XS", WorldDatasetFactory.CreateXS()),
-        ("Small", WorldDatasetFactory.CreateSmall()),
-        ("Medium", WorldDatasetFactory.CreateMedium()),
-        ("Large", WorldDatasetFactory.CreateLarge())
+        ("XS", WorldDatasetFactory.CreateXS(), 10),
+        ("XS", WorldDatasetFactory.CreateXS(), 16),
+        ("Small", WorldDatasetFactory.CreateSmall(), 0),
+        ("Small", WorldDatasetFactory.CreateSmall(), 10),
+        ("Small", WorldDatasetFactory.CreateSmall(), 15),
+        ("Medium", WorldDatasetFactory.CreateMedium(), 50),
+        ("Large", WorldDatasetFactory.CreateLarge(), 100)
     };
 
-    foreach (var (name, world) in worlds)
+    foreach (var (name, world, budget) in worlds)
     {
-        WorldQueries queries = new WorldQueries(world);
         ReachabilityQuery routeFinder = new ReachabilityQuery(world);
-        int startID = 0;
 
-        IReadOnlyDictionary<int, int> results = routeFinder.FindReachable(startID, 15000);
+        IReadOnlyDictionary<int, int> results = routeFinder.FindReachable(0, budget);
 
-        foreach (var locationID in results.Keys)
+        Console.WriteLine($"{name}: Reachable Count = {results.Count}");
+        if (results.Count <= 25)
         {
-            Console.WriteLine($"ID: {locationID} Cost: {results[locationID]}");
+            var formatted = string.Join(", ", results.OrderBy(kvp => kvp.Key).Select(kvp => $"{kvp.Key} : {kvp.Value}"));
+            Console.WriteLine($"  Nodes (ID : Cost): {formatted}");
         }
     }
 }
