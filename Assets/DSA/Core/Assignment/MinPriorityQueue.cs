@@ -43,11 +43,11 @@ namespace FrontierDispatch.Core
          /// <exception cref="InvalidOperationException">
          /// Thrown when the queue is empty.
          /// </exception>
-        public T Dequeue()
+        public Entry Dequeue()
         {
             if (_heap.Count == 0) throw new InvalidOperationException("The queue is empty");
 
-            T rootItem = _heap[0].Item;
+            Entry rootItem = _heap[0];
             int lastIndex = _heap.Count - 1;
 
             if (lastIndex > 0)
@@ -152,7 +152,7 @@ namespace FrontierDispatch.Core
         /// <summary>
         /// Stores one item together with the priority used by the heap.
         /// </summary>
-        private readonly struct Entry
+        public readonly struct Entry
         {
             public Entry(T item, int priority)
             {

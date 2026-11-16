@@ -1,6 +1,7 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FrontierDispatch.Core
 {
@@ -80,7 +81,7 @@ namespace FrontierDispatch.Core
 
             while(prioQueue.Count > 0)
             {
-                int currentID = prioQueue.Dequeue();
+                int currentID = prioQueue.Dequeue().Item;
 
                 if (!visited.Add(currentID))
                     continue;

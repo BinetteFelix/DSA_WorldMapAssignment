@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using FrontierDispatch.Core;
 
@@ -37,13 +38,14 @@ Console.WriteLine($"Peek lowest priority: '{locQ.Peek().Id}'\n");
 
 while (locQ.Count > 0)
 {
-    Location loc = locQ.Dequeue();
+    Location loc = locQ.Dequeue().Item;
     Console.WriteLine($"-> processed: {loc.Id}");
 }
 
-RunRouteFinder();
+RunDijkstra();
+RunReachabilityQuery();
 
-static void RunRouteFinder()
+static void RunDijkstra()
 {
     Console.WriteLine();
     Console.WriteLine("--- Dijkstra's route finder ---");
@@ -71,6 +73,34 @@ static void RunRouteFinder()
         {
             Console.WriteLine($"    Path: {string.Join("->", result.LocationIds)}");
             Console.WriteLine();
+        }
+    }
+}
+static void RunReachabilityQuery()
+{
+    Console.WriteLine();
+    Console.WriteLine("--- Reachability finder ---");
+    Console.WriteLine();
+
+    var worlds = new (string Name, WorldData Data)[]
+    {
+        ("XS", WorldDatasetFactory.CreateXS()),
+        ("Small", WorldDatasetFactory.CreateSmall()),
+        ("Medium", WorldDatasetFactory.CreateMedium()),
+        ("Large", WorldDatasetFactory.CreateLarge())
+    };
+
+    foreach (var (name, world) in worlds)
+    {
+        WorldQueries queries = new WorldQueries(world);
+        ReachabilityQuery routeFinder = new ReachabilityQuery(world);
+        int startID = 0;
+
+        IReadOnlyDictionary<int, int> results = routeFinder.FindReachable(startID, 15000);
+
+        foreach (var locationID in results.Keys)
+        {
+            Console.WriteLine($"ID: {locationID} Cost: {results[locationID]}");
         }
     }
 }

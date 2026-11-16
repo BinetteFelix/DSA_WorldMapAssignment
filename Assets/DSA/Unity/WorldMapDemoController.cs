@@ -1,9 +1,9 @@
 #nullable enable
 
 using FrontierDispatch.Core;
-using FrontierDispatch.Unity.Assets.DSA.Unity;
+using FrontierDispatch.Unity;
+using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,7 +16,7 @@ namespace FrontierDispatch.Unity
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private WorldData? _world;
         private WorldQueries? _queries;
-
+        private Action<int> onNodeSelecd;
         private RouteResult routeResult;
         private string _idText = "734";
 
@@ -28,6 +28,7 @@ namespace FrontierDispatch.Unity
         private float updateInterval = 0.2f;
         private int currentNodeIndex;
         private bool hasRunRouteFinder;
+        int steps;
 
         private void Start()
         {
@@ -50,7 +51,7 @@ namespace FrontierDispatch.Unity
                 Connection c = _world.Connections[i];
                 if (!_views.TryGetValue(c.FromLocationId, out GameObject? a) || !_views.TryGetValue(c.ToLocationId, out GameObject? b)) continue;
                 if (c.FromLocationId > c.ToLocationId) continue; // draw bidirectional road once
-                var road = new GameObject($"Road_{c.FromLocationId}_{c.ToLocationId}");
+                var road = new GameObject($"Edge_{c.FromLocationId}_{c.ToLocationId}");
                 var lr = road.AddComponent<LineRenderer>();
                 lr.positionCount = 2;
                 lr.SetPosition(0, a.transform.position + Vector3.up * 0.05f);
@@ -64,6 +65,8 @@ namespace FrontierDispatch.Unity
                 lr.receiveShadows = false;
                 road.isStatic = true;
             }
+            InitAction(SelectNode);
+            onNodeSelecd += CountSteps;
         }
         private void Update()
         {
@@ -71,24 +74,53 @@ namespace FrontierDispatch.Unity
 
             if (updateInterval < 0 && hasRunRouteFinder && currentNodeIndex < routeResult.LocationIds.Count)
             {
+                onNodeSelecd?.Invoke(currentNodeIndex);
                 updateInterval = 0.02f;
-                SelectNode();
                 currentNodeIndex++;
             }
-            else if (currentNodeIndex >= _views.Count)
+            else if (routeResult != null)
             {
-                hasRunRouteFinder = false;
-                currentNodeIndex = 0;
-                Debug.Log("Reached the goal node!");
+                if (currentNodeIndex >= routeResult.LocationIds.Count)
+                {
+                    hasRunRouteFinder = false;
+                    currentNodeIndex = 0;
+                    onNodeSelecd -= CountSteps;
+                    Debug.Log("Reached the goal node!");
+                }
             }
+            
         }
-
-        private void SelectNode()
+        
+        private void InitAction(Action<int> action)
         {
-            if (currentNodeIndex >= _views.Count)
+            onNodeSelecd = action;
+        }
+        private void CountSteps(int something)
+        {
+            steps++;
+        }
+        private void SelectNode(int nodeIndex)
+        {
+            if (nodeIndex >= routeResult.LocationIds.Count)
+            {
                 return;
+            }
+            else if (nodeIndex == 0)
+            {
+                Renderer startLocationRenderer = _views[routeResult.LocationIds[nodeIndex]].GetComponent<Renderer>();
+                startLocationRenderer.material.color = new Color(1f, 0.1f, 0.35f);
+            }
             else
-                _views[routeResult.LocationIds[currentNodeIndex]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+            {
+                if (nodeIndex == (routeResult.LocationIds.Count - 1))
+                {
+                    Renderer goalLocationRenderer = _views[routeResult.LocationIds[routeResult.LocationIds.Count - 1]].GetComponent<Renderer>();
+                    goalLocationRenderer.material.color = new Color(0.2f, 0.25f, 1f);
+                }
+                else
+                    _views[routeResult.LocationIds[nodeIndex]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+            }
+                
         }
         private void ResetColors()
         {
@@ -114,7 +146,7 @@ namespace FrontierDispatch.Unity
             int outgoing = _queries.FindOutgoingConnections(id).Count;
             _status = $"Found {location.Name}. Outgoing connections: {outgoing}. Baseline queries scan the stored collections.";
         }
-        private void FindShortestPath(int startLocationID, int goalLocationID)
+        private void ShortestPathDijkstra(int startLocationID, int goalLocationID)
         {
             currentNodeIndex = 0;
             DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(_world);
@@ -144,7 +176,8 @@ namespace FrontierDispatch.Unity
             _startIDText = GUILayout.TextField(_startIDText);
             _goalIDText = GUILayout.TextField(_goalIDText);
 
-            if (GUILayout.Button("Find shortest path")) FindShortestPath(int.Parse(_startIDText), int.Parse(_goalIDText));
+            if (GUILayout.Button("Find shortest path")) ShortestPathDijkstra(int.Parse(_startIDText), int.Parse(_goalIDText));
+            GUILayout.Label("Steps taken: " + steps);
             GUILayout.Space(10f);
             GUILayout.Label(_status);
             GUILayout.Label("Students are assessed on the headless C# system. Unity visualization is optional.");
