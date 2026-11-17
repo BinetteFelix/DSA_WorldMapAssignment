@@ -36,15 +36,17 @@ namespace FrontierDispatch.Core
             foreach (var location in _world.Locations)
             {
                 _validLocationIDs.Add(location.Id);
-                if (!_adjecencyList.ContainsKey(location.Id))
+                bool isNewLocation = (!_adjecencyList.ContainsKey(location.Id));
+
+                if (isNewLocation)
                     _adjecencyList[location.Id] = new List<Connection>();
             }
             foreach (var connection in world.Connections)
             {
-                if (_adjecencyList.TryGetValue(connection.FromLocationId, out var list))
-                {
+                bool connectionHasFromLocation = (_adjecencyList.TryGetValue(connection.FromLocationId, out var list));
+
+                if (connectionHasFromLocation)
                     list.Add(connection);
-                }
             }
         }
 
@@ -57,7 +59,10 @@ namespace FrontierDispatch.Core
         /// </summary>
         public IReadOnlyDictionary<int, int> FindReachable(int startLocationId, int maxTravelCost)
         {
-            if (maxTravelCost < 0 || !_validLocationIDs.Contains(startLocationId))
+            bool lessThanZeroMaxCost = (maxTravelCost < 0);
+            bool noStartLocation = (!_validLocationIDs.Contains(startLocationId));
+
+            if (lessThanZeroMaxCost || noStartLocation)
                 return new Dictionary<int, int>();
 
             var cheapestCosts = new Dictionary<int, int>
@@ -72,23 +77,30 @@ namespace FrontierDispatch.Core
             while(prioQueue.Count > 0)
             {
                 int currentID = prioQueue.Dequeue().Item;
+                bool idExists = (!visited.Add(currentID));
 
-                if (!visited.Add(currentID))
+                if (idExists)
                     continue;
 
                 int currentCost = cheapestCosts[currentID];
 
                 foreach(Connection edge in _adjecencyList[currentID])
                 {
-                    if (visited.Contains(edge.ToLocationId))
+                    bool locationVisited = (visited.Contains(edge.ToLocationId));
+
+                    if (locationVisited)
                         continue;
 
                     int newCost = currentCost + edge.TravelCost;
+                    bool toExpensive = newCost > maxTravelCost;
 
-                    if (newCost > maxTravelCost)
+                    if (toExpensive)
                         continue;
 
-                    if (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost) || newCost < existingCost)
+                    bool costExists = (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost));
+                    bool newCheaperCost = (newCost < existingCost);
+
+                    if (costExists || newCheaperCost)
                     {
                         cheapestCosts[edge.ToLocationId] = newCost;
                         prioQueue.Enqueue(edge.ToLocationId, newCost);

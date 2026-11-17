@@ -302,7 +302,7 @@ Transform:
   m_GameObject: {fileID: 315140092}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6047853, y: 0.1047854, z: -0.08069561, w: 0.7853299}
-  m_LocalPosition: {x: 89.5, y: 95.3, z: 40.7}
+  m_LocalPosition: {x: 19.312737, y: 26.031626, z: 11.210345}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -352,6 +352,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrontierDispatch.Unity::FrontierDispatch.Unity.WorldMapDemoController
   _nodePrefab: {fileID: 7376599837829951500, guid: 2908bb8b1eb7a3c4ebe23ebdc8603f47, type: 3}
   edgeMAT: {fileID: 2100000, guid: cc5ed5c2372123b4da0b00b57c97d0b5, type: 2}
+  StartIDText: 500
+  GoalIDText: 1968
 --- !u!4 &1602212406
 Transform:
   m_ObjectHideFlags: 0

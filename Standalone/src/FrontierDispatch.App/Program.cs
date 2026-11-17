@@ -89,7 +89,7 @@ static void RunReachabilityQuery()
         ("XS", WorldDatasetFactory.CreateXS(), 16),
         ("Small", WorldDatasetFactory.CreateSmall(), 0),
         ("Small", WorldDatasetFactory.CreateSmall(), 10),
-        ("Small", WorldDatasetFactory.CreateSmall(), 15),
+        ("Small", WorldDatasetFactory.CreateSmall(), 30),
         ("Medium", WorldDatasetFactory.CreateMedium(), 50),
         ("Large", WorldDatasetFactory.CreateLarge(), 100)
     };
