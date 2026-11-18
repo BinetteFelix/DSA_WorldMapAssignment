@@ -72,9 +72,6 @@ namespace FrontierDispatch.Unity
                 road.isStatic = true;
             }*/
             InitAction(SelectNode);
-            onNodeSelected += CountSteps;
-
-            
         }
         private void Update()
         {
@@ -82,6 +79,8 @@ namespace FrontierDispatch.Unity
 
             if (currentNodeIndex < Views.Count && hasStartedRouteFinder && !hasCheckedLocations)
             {
+                onNodeSelected += CountSteps;
+                steps = 0;
                 StartCoroutine(CheckNode());
             }
             else if (currentNodeIndex >= Views.Count && !hasStartedRouteFinder && !hasCheckedLocations)
@@ -134,6 +133,7 @@ namespace FrontierDispatch.Unity
         }
         private void SelectNode(int nodeIndex)
         {
+            Debug.Log("Started selecting nodes");
             if (nodeIndex >= routeResult.LocationIds.Count)
             {
                 return;
@@ -182,7 +182,7 @@ namespace FrontierDispatch.Unity
         private void ShortestPathDijkstra(int startLocationID, int goalLocationID)
         {
             currentNodeIndex = 0;
-            DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(_world);
+            AStarRouteFinder routeFinder = new AStarRouteFinder(_world);
             routeResult = routeFinder.FindRoute(startLocationID, goalLocationID);
 
             ResetColors();

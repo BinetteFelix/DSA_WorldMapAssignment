@@ -10,17 +10,6 @@ if (args.Length > 0 && args[0] == "--baseline")
     return;
 }
 
-// Small sanity-check application.
-// This is separate from the larger performance workload below.
-WorldData world = SampleWorldFactory.CreateSmall();
-var queries = new WorldQueries(world);
-
-Console.WriteLine("Frontier Dispatch - assignment starter");
-Console.WriteLine($"Small demo locations: {world.Locations.Count}");
-Console.WriteLine($"Find 734: {queries.FindLocationById(734)?.Name ?? "missing"}");
-Console.WriteLine();
-Console.WriteLine("Run with --baseline to record the supplied baseline workload.");
-
 WorldData world1 = WorldDatasetFactory.CreateXS();
 MinPriorityQueue<Location> locQ = new MinPriorityQueue<Location>();
 
@@ -45,6 +34,7 @@ while (locQ.Count > 0)
 
 RunDijkstra();
 RunReachabilityQuery();
+RunAStar();
 
 static void RunDijkstra()
 {
@@ -105,6 +95,37 @@ static void RunReachabilityQuery()
         {
             var formatted = string.Join(", ", results.OrderBy(kvp => kvp.Key).Select(kvp => $"{kvp.Key} : {kvp.Value}"));
             Console.WriteLine($"  Nodes (ID : Cost): {formatted}");
+        }
+    }
+}
+static void RunAStar()
+{
+    Console.WriteLine();
+    Console.WriteLine("--- A* route finder ---");
+    Console.WriteLine();
+    var worlds = new (string Name, WorldData Data)[]
+    {
+        ("XS", WorldDatasetFactory.CreateXS()),
+        ("Small", WorldDatasetFactory.CreateSmall()),
+        ("Medium", WorldDatasetFactory.CreateMedium()),
+        ("Large", WorldDatasetFactory.CreateLarge())
+    };
+
+    foreach (var (name, world) in worlds)
+    {
+        WorldQueries queries = new WorldQueries(world);
+        AStarRouteFinder routeFinder = new AStarRouteFinder(world);
+        int startID = 0;
+        int goalID = world.Locations.Count - 1;
+
+        RouteResult result = routeFinder.FindRoute(startID, goalID);
+
+        Console.WriteLine($"{name}: Found = {result.Found}, Cost = {result.TotalCost}, Expanded = {result.ExpandedCount}");
+        Console.WriteLine($"Jumps = {result.LocationIds.Count}");
+        if (result.LocationIds.Count <= 25)
+        {
+            Console.WriteLine($"    Path: {string.Join("->", result.LocationIds)}");
+            Console.WriteLine();
         }
     }
 }
