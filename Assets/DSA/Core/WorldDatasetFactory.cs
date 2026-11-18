@@ -39,7 +39,7 @@ namespace FrontierDispatch.Core
         /// </summary>
         public static WorldData CreateGrid(int width, int height)
         {
-            var locations = new List<Location>(width * height);
+            var locations = new Dictionary<int, Location>(width * height);
             var connections = new List<Connection>();
 
             // Locations use a stable row-major ID, i.e. the first row is 0..width-1, the second row is width..2*width-1, etc.
@@ -49,7 +49,7 @@ namespace FrontierDispatch.Core
                 for (int x = 0; x < width; ++x)
                 {
                     int id = y * width + x;
-                    locations.Add(new Location(id, $"Outpost {id}", new WorldPosition(x, y), "Outpost"));
+                    locations.Add(id, new Location(id, $"Outpost {id}", new WorldPosition(x, y), "Outpost"));
                 }
             }
 

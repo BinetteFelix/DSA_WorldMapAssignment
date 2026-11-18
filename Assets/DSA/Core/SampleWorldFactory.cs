@@ -2,7 +2,7 @@ namespace FrontierDispatch.Core
 {
     public static class SampleWorldFactory
     {
-        public static WorldData CreateSmall()
+        /*public static WorldData CreateSmall()
         {
             var locations = new[]
             {
@@ -27,6 +27,6 @@ namespace FrontierDispatch.Core
             };
 
             return new WorldData(locations, connections);
-        }
+        }*/
     }
 }

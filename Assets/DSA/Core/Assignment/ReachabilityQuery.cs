@@ -31,7 +31,7 @@ namespace FrontierDispatch.Core
 
             _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
 
-            foreach (var location in _world.Locations)
+            foreach (var location in _world.Locations.Values)
             {
                 bool isNewLocation = (!_adjecencyList.ContainsKey(location.Id));
                 if (isNewLocation)

@@ -28,7 +28,7 @@ namespace FrontierDispatch.Core
             _world = world ?? throw new ArgumentNullException(nameof(world));
             _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
 
-            foreach (var location in _world.Locations)
+            foreach (var location in _world.Locations.Values)
             {
                 if (!_adjecencyList.ContainsKey(location.Id))
                     _adjecencyList[location.Id] = new List<Connection>();
