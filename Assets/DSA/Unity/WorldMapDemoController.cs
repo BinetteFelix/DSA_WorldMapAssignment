@@ -88,7 +88,6 @@ namespace FrontierDispatch.Unity
             {
                 hasCheckedLocations = true;
                 currentNodeIndex = 0;
-                onNodeSelected -= CountSteps;
                 Debug.Log("Checked Everything!");
             }
 

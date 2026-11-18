@@ -21,7 +21,6 @@ namespace FrontierDispatch.Core
     {
         private readonly WorldData _world;
         private readonly Dictionary<int, List<Connection>> _adjecencyList;
-        private readonly HashSet<int> _validLocationIDs;
 
         /// <summary>
         /// Creates a reachability query operating on the supplied world.
@@ -31,17 +30,14 @@ namespace FrontierDispatch.Core
             _world = world ?? throw new ArgumentNullException(nameof(world));
 
             _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
-            _validLocationIDs = new HashSet<int>(_world.Locations.Count);
 
             foreach (var location in _world.Locations)
             {
-                _validLocationIDs.Add(location.Id);
                 bool isNewLocation = (!_adjecencyList.ContainsKey(location.Id));
-
                 if (isNewLocation)
                     _adjecencyList[location.Id] = new List<Connection>();
             }
-            foreach (var connection in world.Connections)
+            foreach (var connection in _world.Connections)
             {
                 bool connectionHasFromLocation = (_adjecencyList.TryGetValue(connection.FromLocationId, out var list));
 
@@ -60,7 +56,7 @@ namespace FrontierDispatch.Core
         public IReadOnlyDictionary<int, int> FindReachable(int startLocationId, int maxTravelCost)
         {
             bool lessThanZeroMaxCost = (maxTravelCost < 0);
-            bool noStartLocation = (!_validLocationIDs.Contains(startLocationId));
+            bool noStartLocation = (!_adjecencyList.ContainsKey(startLocationId));
 
             if (lessThanZeroMaxCost || noStartLocation)
                 return new Dictionary<int, int>();
@@ -97,10 +93,10 @@ namespace FrontierDispatch.Core
                     if (toExpensive)
                         continue;
 
-                    bool costExists = (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost));
-                    bool newCheaperCost = (newCost < existingCost);
+                    bool isNewCost = (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost));
+                    bool isCheaperCost = (newCost < existingCost);
 
-                    if (costExists || newCheaperCost)
+                    if (isNewCost || isCheaperCost)
                     {
                         cheapestCosts[edge.ToLocationId] = newCost;
                         prioQueue.Enqueue(edge.ToLocationId, newCost);

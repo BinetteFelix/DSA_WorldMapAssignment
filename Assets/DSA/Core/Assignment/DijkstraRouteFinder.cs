@@ -19,7 +19,6 @@ namespace FrontierDispatch.Core
     {
         private readonly WorldData _world;
         private readonly Dictionary<int, List<Connection>> _adjecencyList;
-        private readonly HashSet<int> _validLocationIDs;
 
         /// <summary>
         /// Constructor. Creates a route finder operating on the supplied world.
@@ -27,17 +26,14 @@ namespace FrontierDispatch.Core
         public DijkstraRouteFinder(WorldData world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
-
             _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
-            _validLocationIDs = new HashSet<int>(_world.Locations.Count);
 
             foreach (var location in _world.Locations)
             {
-                _validLocationIDs.Add(location.Id);
                 if (!_adjecencyList.ContainsKey(location.Id))
                     _adjecencyList[location.Id] = new List<Connection>();
             }
-            foreach (var connection in world.Connections)
+            foreach (var connection in _world.Connections)
             {
                 if (_adjecencyList.TryGetValue(connection.FromLocationId, out var list))
                 {
@@ -56,25 +52,30 @@ namespace FrontierDispatch.Core
         /// </summary>
         public RouteResult FindRoute(int startLocationId, int goalLocationId)
         {
-            if (!_validLocationIDs.Contains(startLocationId) || !_validLocationIDs.Contains(goalLocationId))
-                return new RouteResult(found: false, 
+            if (!_adjecencyList.ContainsKey(startLocationId) || !_adjecencyList.ContainsKey(goalLocationId))
+                return new RouteResult
+                (
+                    found: false, 
                     Array.Empty<int>(), 
                     totalCost: 0, 
-                    expandedCount: 0);
+                    expandedCount: 0
+                );
 
             if (startLocationId == goalLocationId)
-                return new RouteResult(found: true, 
+                return new RouteResult
+                (   
+                    found: true, 
                     new[] {startLocationId}, 
                     totalCost: 0, 
                     expandedCount: 0
                 );
 
-            Dictionary<int, int> distances = new Dictionary<int, int>();
+            Dictionary<int, int> costs = new Dictionary<int, int>();
             Dictionary<int, int> previousNode = new Dictionary<int, int>();
             HashSet<int> visited = new HashSet<int>();
             MinPriorityQueue<int> prioQueue = new MinPriorityQueue<int>();
 
-            distances[startLocationId] = 0;
+            costs[startLocationId] = 0;
             prioQueue.Enqueue(startLocationId, 0);
 
             int expandedCount = 0;
@@ -92,37 +93,42 @@ namespace FrontierDispatch.Core
                 {
                     var path = ReconstructPath(previousNode, startLocationId, goalLocationId);
 
-                    return new RouteResult(
+                    return new RouteResult
+                    (
                         found: true,
                         locationIds: path,
-                        totalCost: distances[goalLocationId],
+                        totalCost: costs[goalLocationId],
                         expandedCount: expandedCount
                     );
                 }
 
-                int currentDistance = distances[currentID];
+                int currentCost = costs[currentID];
 
-                if (_adjecencyList.TryGetValue(currentID, out var edges))
+                if (_adjecencyList.TryGetValue(currentID, out var outgoingEdges))
                 {
-                    foreach (Connection? edge in _adjecencyList[currentID])
+                    foreach (Connection? edge in outgoingEdges)
                     {
                         if (visited.Contains(edge.ToLocationId))
                             continue;
-                        int newDistance = currentDistance + edge.TravelCost;
 
-                        if (!distances.TryGetValue(edge.ToLocationId, out int existingDistance) || newDistance < existingDistance)
+                        int newCost = currentCost + edge.TravelCost;
+
+                        if (!costs.TryGetValue(edge.ToLocationId, out int existingCost) || newCost < existingCost)
                         {
-                            distances[edge.ToLocationId] = newDistance;
+                            costs[edge.ToLocationId] = newCost;
                             previousNode[edge.ToLocationId] = currentID;
-                            prioQueue.Enqueue(edge.ToLocationId, newDistance);
+                            prioQueue.Enqueue(edge.ToLocationId, newCost);
                         }
                     }
                 }
             }
-            return new RouteResult(found: false,
-                    Array.Empty<int>(),
-                    totalCost: 0,
-                    expandedCount: expandedCount);
+            return new RouteResult
+            (
+                found: false,
+                Array.Empty<int>(),
+                totalCost: 0,
+                expandedCount: expandedCount
+            );
         }
         /// <summary>
         /// Returns the list of locations visited to get the shortest path.
