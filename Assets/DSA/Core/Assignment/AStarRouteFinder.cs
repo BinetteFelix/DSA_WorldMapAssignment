@@ -51,7 +51,7 @@ namespace FrontierDispatch.Core
                 Console.WriteLine("Failed because start was goal");
                 return new RouteResult
                 (
-                    found: false,
+                    found: true,
                     new[] { startLocationID },
                     totalCost: 0,
                     expandedCount: 0

@@ -9,9 +9,9 @@ namespace FrontierDispatch.Tests
         public void FindLocationById_ReturnsMatchingLocation()
         {
             var queries = new WorldQueries(WorldDatasetFactory.CreateSmall());
-            Location? location = queries.FindLocationById(734);
+            Location? location = queries.FindLocationById(4);
             Assert.That(location, Is.Not.Null);
-            Assert.That(location!.Name, Is.EqualTo("North Gate"));
+            Assert.That(location!.Name, Is.EqualTo("Outpost 4"));
         }
 
         [Test]
@@ -25,11 +25,11 @@ namespace FrontierDispatch.Tests
         public void FindOutgoingConnections_ReturnsOnlyMatchingOrigin()
         {
             var queries = new WorldQueries(WorldDatasetFactory.CreateSmall());
-            var outgoing = queries.FindOutgoingConnections(734);
+            var outgoing = queries.FindOutgoingConnections(2);
             Assert.That(outgoing.Count, Is.EqualTo(3));
             for (int i = 0; i < outgoing.Count; ++i)
             {
-                Assert.That(outgoing[i].FromLocationId, Is.EqualTo(734));
+                Assert.That(outgoing[i].FromLocationId, Is.EqualTo(2));
             }
         }
     }

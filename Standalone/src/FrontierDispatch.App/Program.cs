@@ -118,7 +118,7 @@ static void RunAStar()
         int startID = 0;
         int goalID = world.Locations.Count - 1;
 
-        RouteResult result = routeFinder.FindRoute(startID, goalID);
+        RouteResult result = routeFinder.FindRoute(startID, goalID, new HashSet<int>());
 
         Console.WriteLine($"{name}: Found = {result.Found}, Cost = {result.TotalCost}, Expanded = {result.ExpandedCount}");
         Console.WriteLine($"Jumps = {result.LocationIds.Count}");
