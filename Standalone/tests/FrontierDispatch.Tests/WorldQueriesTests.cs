@@ -8,7 +8,7 @@ namespace FrontierDispatch.Tests
         [Test]
         public void FindLocationById_ReturnsMatchingLocation()
         {
-            var queries = new WorldQueries(WorldDatasetFactory.CreateSmall());
+            var queries = new WorldQueries(WorldDatasetFactory.CreateLarge());
             Location? location = queries.FindLocationById(4);
             Assert.That(location, Is.Not.Null);
             Assert.That(location!.Name, Is.EqualTo("Outpost 4"));

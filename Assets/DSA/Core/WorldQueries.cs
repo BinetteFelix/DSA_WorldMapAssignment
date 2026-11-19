@@ -26,14 +26,10 @@ namespace FrontierDispatch.Core
 
         public Location? FindLocationById(int id)
         {
-            foreach (Location location in _world.Locations.Values)
-            {
-                if (location.Id == id)
-                {
-                    return location;
-                }
-            }
-            return null;
+            if (_world.Locations.TryGetValue(id, out Location location))
+                return location;
+            else
+                return null;
         }
 
         public IReadOnlyList<Connection> FindOutgoingConnections(int fromLocationId)
@@ -52,7 +48,7 @@ namespace FrontierDispatch.Core
         }
         public static int ManhattanDistance(Location fromLocation, Location toLocation)
         {
-            return Convert.ToInt32(Math.Abs(fromLocation.Position.X - toLocation.Position.X) + Math.Abs(fromLocation.Position.Y - toLocation.Position.Y));
+            return (int)(Math.Abs(fromLocation.Position.X - toLocation.Position.X) + Math.Abs(fromLocation.Position.Y - toLocation.Position.Y));
         }
     }
 }

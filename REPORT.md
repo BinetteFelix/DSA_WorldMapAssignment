@@ -33,16 +33,21 @@ I also used to have a HashSet for checking for “_validLocationIDs” meaning locat
 Explain your route finder at a useful high level and how the travel-budget query adapts the same ideas.
 
 ## 4. Complexity
-
 | Operation | Your representation/algorithm | Complexity | Short explanation | 
-
-| Find location by ID | AdjecencyList.ContainsKey() | O(1) | Instant look up, for increased memory usage |
+
+| --- | --- | --- | --- | 
+
+
+
+
+| Find location by ID | AdjecencyList.ContainsKey() | O(1) | Trade for increased memory usage for instant look up |
 
 | Get outgoing connections | AdjecencyList.TryGetValue() | O(1) | Instant look up, for increased memory usage |
 
-| Priority queue enqueue |  |  |  |
+| Priority queue enqueue | Adding to a list and using and recursevly calling “Swap” item to swap and organize the heap | O(log n) | 
+Creates an entry with an item<T> and its priority and adds it to the queue then calls “Move-Up” and recursively moves the entry up the heap based on its priority |
 
-| Priority queue dequeue-min |  | O(Log n) |  |
+| Priority queue dequeue-min | Return type Entry(Item<T>, int priority) and gets the root item and index of the last item and recursively moves down the heap to return the root item | O(Log n) | Dequeue calls the move down method, which in turn checks if the index next to the input index is smaller or larger in priority, or if the given index has smaller priority |
 
 | Route finding | Dijkstra | O((E + V)Log V) | E = number of edges (connections), V = number of vertices (locations) and Log V for the number of iterations in the priority queue |
 
@@ -50,9 +55,22 @@ Explain your route finder at a useful high level and how the travel-budget query
 
 Important tests/edge cases and what they demonstrate.
 
+PriorityQueue_EnqueueAndDequeue_ReturnsLowestPriorityFirst()
+This test demonstrates that the MinPriorityQueue returns the right entry when calling dequeue.
+
+Dijkstra_StartEqualsGoal_ReturnsZeroCostRoute()
+This test demonstrates that the start location is the same as the goal location, returns found as true, locationIDs list with 1 element of id 0, total cost of 0 and expanded count of 0.
+
+Reachability_ZeroBudget_IncludesStartAtZeroCost()
+Demonstrates that the reachability query can do basically the same thing as the last test for the Dijkstra route finder, but still different. It checks the edge case of the max travel cost being 0 and therefore returns a dictionary with 1 element being id 0 and cost 0.
+
 ## 6. Performance investigation
 
 Record reproducible before/after measurements for loading/preparation, repeated runtime work, and relevant allocation behavior. Explain what changed and why.
+
+When running a linear Find location by id scan over 2500 locations and 5000 iterations, the elapsed time is: 45.13 ms with an average of 0.0090 ms per iteration, the world creation time was ~1.48 ms. 
+
+Then when optimizing look-up time by switching to a dictionary lookup over the same amount of locations and same amount of iterations, the elapsed time is: 0.24 ms with an average time per iteration of 0.0000 ms, and world creation time of ~1.48 ms. 
 
 ## 7. Development reflection
 
@@ -66,8 +84,19 @@ Briefly describe relevant assistance, if any.
 
 I wanted to know what different ways there were to check for outgoing edges, so I used Google’s “AI-Mode” so that I didn’t need to look through multiple websites just to find some simple information that I could get almost instantly with the “AI-Mode”.
 
+I used AI generation for the baseline tests in Program.cs, but not the “RunDijkstra()” or “RunReachabilityQuery()” or “RunAStar()” those were handmade.
+
+I Used AI assistance in finding bugs when I was creating the routefinders, and most of the time the bugs were just that I had made a stupid syntax error, or like missing to put an ! in an if-statement…
+
 ## 9. VG extension
 
 Only if attempting VG: heuristic, traversal constraints, correctness, and Dijkstra/A* comparison.
 
+I’m using Manhattan Distance as Heuristic for my A* algorithm’s cost calculation, the calculation looks a bit like this: 
+(fromNode.position.x – toNode.position.x) + (fromNode.position.y – toNode.position.y)
 
+Im using an ISet for listing blocked Location ID’s, and evaluating if a node can be traversed before actually calculating any costs, not to mention before traversing at all, this is in order to calculate some sort of maze-like world graph, or in order to decide if a place of the world should not be able to be traversed (sort of implicit but still). 
+
+The difference between A* and Dijkstra can be measured in multiple different ways, but the difference between the ways the evaluate which node to traverse to is calculated based on the accumulated cost so far + the next edge’s travel cost + the Manhattan distance to the goal node from the current node, where as Dijkstra’s algorithm only gets the edge’s travel cost + the accumulated travel cost so far.
+
+One key difference between my Dijkstra and my A* is the fact that my Dijkstra evaluates whether the algorithm has already visited a node and cannot move back to said node, my A* doesn’t do that but instead checks if the next node being checked has a worse heuristic cost than the current node, and thus is able to move backward if there are blocked nodes, the blocked nodes implementation was not made in my Dijkstra’s route finder.
