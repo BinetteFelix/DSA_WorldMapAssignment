@@ -15,14 +15,15 @@ namespace FrontierDispatch.Unity
         [SerializeField] private GameObject _nodePrefab;
         [SerializeField] private Material edgeMAT;
         public readonly Dictionary<int, GameObject> Views = new Dictionary<int, GameObject>();
+        private HashSet<int> nonTraversableNodeIDs;
         private WorldData? _world;
         private WorldQueries? _queries;
         private Action<int> onNodeSelected;
         private RouteResult routeResult;
         private string _idText = "734";
 
-        public string StartIDText = "500";
-        public string GoalIDText = "1968";
+        public string StartIDText = "0";
+        public string GoalIDText = "2499";
 
         private string _status = "Baseline lookup uses a linear scan.";
 
@@ -81,13 +82,14 @@ namespace FrontierDispatch.Unity
             {
                 onNodeSelected += CountSteps;
                 steps = 0;
+                StopAllCoroutines();
                 StartCoroutine(CheckNode());
             }
             else if (currentNodeIndex >= Views.Count && !hasStartedRouteFinder && !hasCheckedLocations)
             {
                 hasCheckedLocations = true;
                 currentNodeIndex = 0;
-                Debug.Log("Checked Everything!");
+                Debug.Log("Rendered Everything!");
             }
 
             if (updateInterval < 0 && hasCheckedLocations && currentNodeIndex < routeResult.LocationIds.Count)
@@ -125,15 +127,17 @@ namespace FrontierDispatch.Unity
 
             foreach (var item in Views.Values)
             {
-                item.GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
+                if (nonTraversableNodeIDs != null && nonTraversableNodeIDs.Contains(currentNodeIndex))
+                    item.GetComponent<Renderer>().material.color = new Color(0, 0, 0f);
+                else
+                    item.GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
 
                 currentNodeIndex++;
-                yield return new WaitForSeconds(0.0001f);
+                yield return new WaitForSeconds(0.00001f);
             }
         }
         private void SelectNode(int nodeIndex)
         {
-            Debug.Log("Started selecting nodes");
             if (nodeIndex >= routeResult.LocationIds.Count)
             {
                 return;
@@ -181,26 +185,42 @@ namespace FrontierDispatch.Unity
         }
         private void ShortestPathDijkstra(int startLocationID, int goalLocationID)
         {
+            if (nonTraversableNodeIDs != null)
+                nonTraversableNodeIDs.Clear();
+
             currentNodeIndex = 0;
-            AStarRouteFinder routeFinder = new AStarRouteFinder(_world);
+            DijkstraRouteFinder routeFinder = new DijkstraRouteFinder(_world);
+
             routeResult = routeFinder.FindRoute(startLocationID, goalLocationID);
 
             ResetColors();
+            hasStartedRouteFinder = true;
+        }
+        private void ShortestPathAStar(int startLocationID, int goalLocationID)
+        {
+            if (nonTraversableNodeIDs != null)
+                nonTraversableNodeIDs.Clear();
 
-            for (int i = 0; i < routeResult.LocationIds.Count; i++)
+            currentNodeIndex = 0;
+            AStarRouteFinder routeFinder = new AStarRouteFinder(_world);
+            nonTraversableNodeIDs = new HashSet<int>();
+            foreach (Location node in _world.Locations.Values)
             {
-                /*if (updateInterval < 0)
+                if (node.Id <= 1147 && node.Id >= 1100 || node.Id >= 1201 && node.Id <= 1249)
                 {
-                    updateInterval = 0.2f;
-                    _views[routeResult.LocationIds[i]].GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
-                }*/
-                
+                    if (nonTraversableNodeIDs.Add(node.Id))
+                        continue;
+                }
             }
+
+            routeResult = routeFinder.FindRoute(startLocationID, goalLocationID, nonTraversableNodeIDs);
+
+            ResetColors();
             hasStartedRouteFinder = true;
         }
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(20f, 20f, 500f, 245f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(20f, 20f, 500f, 400f), GUI.skin.box);
             GUILayout.Label("FRONTIER DISPATCH - assignment world-map baseline");
             GUILayout.Label("This scene visualizes the same pure C# WorldData/WorldQueries compiled by the standalone .NET solution.");
             GUILayout.Label("Location ID:");
@@ -209,8 +229,19 @@ namespace FrontierDispatch.Unity
             StartIDText = GUILayout.TextField(StartIDText);
             GoalIDText = GUILayout.TextField(GoalIDText);
 
-            if (GUILayout.Button("Find shortest path")) ShortestPathDijkstra(int.Parse(StartIDText), int.Parse(GoalIDText));
+            if (GUILayout.Button("Find With Dijkstra")) 
+            { 
+                ShortestPathDijkstra(int.Parse(StartIDText), int.Parse(GoalIDText));
+                currentNodeIndex = 0;
+            }
             GUILayout.Label("Steps taken: " + steps);
+            if (GUILayout.Button("Find With A*")) 
+            {
+                ShortestPathAStar(int.Parse(StartIDText), int.Parse(GoalIDText));
+                currentNodeIndex = 0;
+            }
+            GUILayout.Label("Steps taken: " + steps);
+
             GUILayout.Space(10f);
             GUILayout.Label(_status);
             GUILayout.Label("Students are assessed on the headless C# system. Unity visualization is optional.");

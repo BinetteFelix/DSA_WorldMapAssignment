@@ -9,7 +9,6 @@ namespace FrontierDispatch.Core
     {
         private readonly WorldData _world;
         private readonly Dictionary<int, List<Connection>> _adjecencyList;
-        private readonly HashSet<int>? _nonTraversable;
 
         public AStarRouteFinder(WorldData world)
         {
@@ -30,12 +29,12 @@ namespace FrontierDispatch.Core
             }
         }
 
-        public RouteResult FindRoute(int startLocationID, int goalLocationID)
+        public RouteResult FindRoute(int startLocationID, int goalLocationID, ISet<int> nonTraversable)
         {
             #region Reality Check
             if  (!_adjecencyList.ContainsKey(startLocationID) || !_adjecencyList.ContainsKey(goalLocationID) ||
-                _nonTraversable != null && _nonTraversable.Contains(startLocationID) ||
-                _nonTraversable != null && _nonTraversable.Contains(goalLocationID))
+                nonTraversable != null && nonTraversable.Contains(startLocationID) ||
+                nonTraversable != null && nonTraversable.Contains(goalLocationID))
             {
                 Console.WriteLine("Failed because start or goal didn't exist");
                 return new RouteResult
@@ -105,7 +104,7 @@ namespace FrontierDispatch.Core
                 {
                     foreach (Connection edge in outgoingEdges)
                     {
-                        if (_nonTraversable != null && _nonTraversable.Contains(edge.ToLocationId))
+                        if (nonTraversable != null && nonTraversable.Contains(edge.ToLocationId))
                             continue;
 
                         int newCostG = checked(currentG + edge.TravelCost);

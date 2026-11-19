@@ -352,8 +352,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrontierDispatch.Unity::FrontierDispatch.Unity.WorldMapDemoController
   _nodePrefab: {fileID: 7376599837829951500, guid: 2908bb8b1eb7a3c4ebe23ebdc8603f47, type: 3}
   edgeMAT: {fileID: 2100000, guid: cc5ed5c2372123b4da0b00b57c97d0b5, type: 2}
-  StartIDText: 500
-  GoalIDText: 1968
+  StartIDText: 0
+  GoalIDText: 2499
 --- !u!4 &1602212406
 Transform:
   m_ObjectHideFlags: 0
