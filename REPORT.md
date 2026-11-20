@@ -49,10 +49,11 @@ The algorithm – when running – keeps a dictionary of found costs<int, int> with 
 
 It also keeps a MinPriorityQueue<int> with Entries containing an int id, and an int priority, and the priority being the cost of reaching the location with the entry’s id. Speaking of cost, the costs are only updated if the cost of getting to the next location costs less than the already existing cost, by checking for this we will always get closer to the goal, and never move away from it farther than we have to. 
 
-The reconstruction of the path – once a shortest route is found – works by getting the previous nodes dictionary, the start id, and goal id, then it iterates through all previous nodes and adds every location visited in previous nodes dictionary to a list of all location id’s, then reverses the list, since the iteration starts from the goal id. 
+The reconstruction of the path – once a shortest route is found – works by getting the previous nodes dictionary (previousNodes is a Dictionary<int, int> each KeyValuePair as <to location id, current id> meaning it stores, so it basically tells the algorithm which nodes are connected to a particular node, and this making it possible for multiple nodes being connected to another one) the start id, and goal id, then it iterates through all previous nodes and adds every location visited in previous nodes dictionary to a list of all location id’s, then reverses the list, since the iteration starts from the goal id. 
 
 The Reachability query builds atop of Dijkstra’s route finder by introducing a max travel cost, because of this new variable we could possibly end up not being able to reach the goal location, but in the reachability query we don’t even care about the end location, we only care about getting to locations under a certain cost. This could be implemented into the Dijkstra’s algorithm, using it for evaluating which step to take next, potentially checking if the path that we want to take fits under the max cost and if not check for other parameters, although this could introduce increased load time, and way more calculation, it could be useful for an enemy that tries to attack towards you but it is a certain distance away from you, the attack has a range of int maxTravelCost, and it increases after each attack, and when it has attacked 3 times the maxTravelCost is long enough to hit the player, it could be an interesting way of doing this sort of thing, but there are probably other ways of doing it. Or maybe the same type of situation but only an enemy that is patrolling och tracking the player based on the maxTravelCost, if the maxTravelCost is exceeded when trying to track the player the enemy starts patrolling instead.
 
+The reachability query basically works the same way of Dijkstra’s algorithm, but adds more to it and has a different return type. The reachability query returns a dictionary consisting of only locations that are reachable, meaning cost less or equally as much as the entered maxTravelCost. The algorithm does not care for the goal locations, and therefore returns all possible locations and their travel cost that fits in the budget. The algorithm also uses a HashSet to see which nodes have already been visited, because why would we need to check the same node twice? It also has a min priority queue, just like Dijkstra and A*. The algorithm only enters a new location if the new location found is less or equal to the max cost, and if the location is not already visited.
 
 ## 4. Complexity
 | Operation | Your representation/algorithm | Complexity | Short explanation | 
@@ -62,9 +63,13 @@ The Reachability query builds atop of Dijkstra’s route finder by introducing a m
 
 
 
-| Find location by ID | AdjecencyList.ContainsKey() | ~O(1 + 0-4 depending on the amount of adjacent edges)  | Trade for increased memory usage for instant look up |
+| Find location by ID | AdjecencyList.ContainsKey() (A*) | ~O(1)  | Trade for increased memory usage for instant look up |
 
-| Get outgoing connections | AdjecencyList.TryGetValue() | O(1) | Instant look up, for increased memory usage |
+| Get outgoing connections | AdjecencyList.TryGetValue() (A*)| O(1) | Trade for increased memory usage for instant look up |
+
+| Find location by ID | AdjecencyList[CurrentID] (Array of lists) (Dijkstra) | ~O(1)  | Trade for having to have a sorted array by location id’s, has to have id’s sorted {0, 1, 2, 3, 4, 5, 6}, no id is ever less or nor more than 1 higher than the previous id |
+
+| Get outgoing connections | for each edge in AdjecencyList[CurrentID] (Array of lists) (Dijkstra)| O(1) | Trade for having to have a sorted array by location id’s, has to have id’s sorted {0, 1, 2, 3, 4, 5, 6}, no id is ever less or nor more than 1 higher than the previous id |
 
 | Priority queue enqueue | Adding to a list and using and recursevly calling “Swap” item to swap and organize the heap | O(log n) | 
 Creates an entry with an item<T> and its priority and adds it to the queue then calls “Move-Up” and recursively moves the entry up the heap based on its priority |
@@ -144,3 +149,4 @@ The difference between A* and Dijkstra can be measured in multiple different way
 One key difference between my Dijkstra and my A* is the fact that my Dijkstra evaluates whether the algorithm has already visited a node and cannot move back to said node, my A* doesn’t do that but instead checks if the next node being checked has a worse total g-cost than the current node, and is able to move backward if there are blocked nodes, the blocked nodes implementation was not made in my Dijkstra’s route finder.
 
 When running the Dijkstra and A* with CreateMedium() the expandedCount is different, meaning they found the target, but had to check different amounts of nodes. Dijkstra expanded 2316 times, while A* expanded 1798 times, so a significant amount of expansions saved. Both algorithms return the same amount of “jumps” meaning traversed nodes, and the same travel cost. The run time difference of A* and Dijkstra in my case is that A* is around ~2-4ms, depending on background processes, the system and some other stuff.. The difference comes from the amount of calculations of the Manhattan distance becomes more expensive than the time saved by going through less nodes, which is what A* does.
+
