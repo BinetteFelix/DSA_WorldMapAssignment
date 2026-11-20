@@ -60,30 +60,41 @@ namespace FrontierDispatch.Core
 
             #endregion
 
+            #region Location Variables
             Location startNode = _world.Locations[startLocationID];
             Location goalNode = _world.Locations[goalLocationID];
+            #endregion
 
+            #region Data Structures
             Dictionary<int, int> costs = new Dictionary<int, int>();
             Dictionary<int, int> previousNode = new Dictionary<int, int>();
             MinPriorityQueue<int> prioQueue = new MinPriorityQueue<int>();
+            #endregion
 
+            #region Initialization
             costs[startLocationID] = 0;
             prioQueue.Enqueue(startLocationID, 0);
 
             int expandedCount = 0;
+            #endregion
 
             while (prioQueue.Count > 0)
             {
+                #region Priority Initialization & Current ID Set
                 MinPriorityQueue<int>.Entry entry = prioQueue.Dequeue();
                 int currentID = entry.Item;
+                #endregion
+
                 _world.Locations.TryGetValue(currentID, out Location currentNode);
 
+                #region Current Cost Calculation
                 if (!costs.TryGetValue(currentID, out int currentG))
                     continue;
 
                 int currentTotalCost = checked(currentG + WorldQueries.ManhattanDistance(currentNode, goalNode));
+                #endregion
 
-                if (entry.Priority != currentTotalCost && currentNode != _world.Locations[startLocationID])
+                if (entry.Priority != currentTotalCost && currentNode != _world.Locations[startLocationID]) // another reality check to see if the current entry's cost/node is valid
                     continue;
 
                 expandedCount++;
@@ -100,6 +111,8 @@ namespace FrontierDispatch.Core
                         expandedCount: expandedCount
                     );
                 }
+
+                #region Next Step Direction Calculation
                 if (_adjecencyList.TryGetValue(currentID, out var outgoingEdges))
                 {
                     foreach (Connection edge in outgoingEdges)
@@ -118,6 +131,7 @@ namespace FrontierDispatch.Core
                         }
                     }
                 }
+                #endregion
             }
             Console.WriteLine("Failed because goal didn't exist");
             return new RouteResult

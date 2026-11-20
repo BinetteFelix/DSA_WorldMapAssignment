@@ -9,7 +9,7 @@ namespace FrontierDispatch.Tests
         public void FindLocationById_ReturnsMatchingLocation()
         {
             var queries = new WorldQueries(WorldDatasetFactory.CreateLarge());
-            Location? location = queries.FindLocationById(4);
+            Location? location = queries.FindLocationByIdInstant(4);
             Assert.That(location, Is.Not.Null);
             Assert.That(location!.Name, Is.EqualTo("Outpost 4"));
         }
@@ -18,7 +18,7 @@ namespace FrontierDispatch.Tests
         public void FindLocationById_ReturnsNullWhenMissing()
         {
             var queries = new WorldQueries(WorldDatasetFactory.CreateSmall());
-            Assert.That(queries.FindLocationById(9999), Is.Null);
+            Assert.That(queries.FindLocationByIdInstant(9999), Is.Null);
         }
 
         [Test]

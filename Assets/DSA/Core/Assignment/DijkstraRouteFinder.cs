@@ -18,7 +18,7 @@ namespace FrontierDispatch.Core
     public sealed class DijkstraRouteFinder
     {
         private readonly WorldData _world;
-        private readonly Dictionary<int, List<Connection>> _adjecencyList;
+        private readonly List<Connection>[] _adjecencyList;
 
         /// <summary>
         /// Constructor. Creates a route finder operating on the supplied world.
@@ -26,19 +26,17 @@ namespace FrontierDispatch.Core
         public DijkstraRouteFinder(WorldData world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
-            _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
+            _adjecencyList = new List<Connection>[_world.Locations.Count];
 
             foreach (var location in _world.Locations.Values)
             {
-                if (!_adjecencyList.ContainsKey(location.Id))
-                    _adjecencyList[location.Id] = new List<Connection>();
+                if (_adjecencyList[location.Id] == null)
+                    _adjecencyList[location.Id] = new List<Connection>(4);
             }
             foreach (var connection in _world.Connections)
             {
-                if (_adjecencyList.TryGetValue(connection.FromLocationId, out var list))
-                {
-                    list.Add(connection);
-                }
+                if (_adjecencyList[connection.FromLocationId] != null)
+                    _adjecencyList[connection.FromLocationId].Add(connection);
             }
                 
         }
@@ -52,7 +50,9 @@ namespace FrontierDispatch.Core
         /// </summary>
         public RouteResult FindRoute(int startLocationId, int goalLocationId)
         {
-            if (!_adjecencyList.ContainsKey(startLocationId) || !_adjecencyList.ContainsKey(goalLocationId))
+            if (startLocationId < 0 || startLocationId >= _adjecencyList.Length ||
+                goalLocationId < 0 || goalLocationId >= _adjecencyList.Length ||
+                _adjecencyList[startLocationId] == null || _adjecencyList[goalLocationId] == null)
                 return new RouteResult
                 (
                     found: false, 
@@ -104,9 +104,9 @@ namespace FrontierDispatch.Core
 
                 int currentCost = costs[currentID];
 
-                if (_adjecencyList.TryGetValue(currentID, out var outgoingEdges))
+                if (_adjecencyList[currentID] != null)
                 {
-                    foreach (Connection? edge in outgoingEdges)
+                    foreach (Connection? edge in _adjecencyList[currentID])
                     {
                         if (visited.Contains(edge.ToLocationId))
                             continue;

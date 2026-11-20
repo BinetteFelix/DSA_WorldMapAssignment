@@ -72,27 +72,13 @@ namespace FrontierDispatch.Unity
                 lr.receiveShadows = false;
                 road.isStatic = true;
             }*/
-            InitAction(SelectNode);
+            InitSelect(SelectNode);
         }
         private void Update()
         {
             updateInterval -= Time.deltaTime;
 
-            if (currentNodeIndex < Views.Count && hasStartedRouteFinder && !hasCheckedLocations)
-            {
-                onNodeSelected += CountSteps;
-                steps = 0;
-                StopAllCoroutines();
-                StartCoroutine(CheckNode());
-            }
-            else if (currentNodeIndex >= Views.Count && !hasStartedRouteFinder && !hasCheckedLocations)
-            {
-                hasCheckedLocations = true;
-                currentNodeIndex = 0;
-                Debug.Log("Rendered Everything!");
-            }
-
-            if (updateInterval < 0 && hasCheckedLocations && currentNodeIndex < routeResult.LocationIds.Count)
+            if (updateInterval < 0 && hasStartedRouteFinder && currentNodeIndex < routeResult.LocationIds.Count)
             {
                 onNodeSelected?.Invoke(currentNodeIndex);
                 updateInterval = 0.02f;
@@ -100,41 +86,24 @@ namespace FrontierDispatch.Unity
             }
             else if (routeResult != null)
             {
-                if (currentNodeIndex >= routeResult.LocationIds.Count && hasCheckedLocations)
+                if (currentNodeIndex >= routeResult.LocationIds.Count && hasStartedRouteFinder)
                 {
-                    hasCheckedLocations = false;
+                    hasStartedRouteFinder = false;
                     currentNodeIndex = 0;
                     onNodeSelected -= CountSteps;
                     Debug.Log("Reached the goal node!");
                 }
             }
         }
-        
-        private void InitAction(Action<int> action)
+
+        #region SELECTING
+        private void InitSelect(Action<int> action)
         {
             onNodeSelected = action;
         }
         private void CountSteps(int something)
         {
             steps++;
-        }
-        private IEnumerator CheckNode()
-        {
-            hasStartedRouteFinder = false;
-
-            if (currentNodeIndex >= Views.Count)
-                yield break;
-
-            foreach (var item in Views.Values)
-            {
-                if (nonTraversableNodeIDs != null && nonTraversableNodeIDs.Contains(currentNodeIndex))
-                    item.GetComponent<Renderer>().material.color = new Color(0, 0, 0f);
-                else
-                    item.GetComponent<Renderer>().material.color = new Color(0.2f, 0.85f, 0.35f);
-
-                currentNodeIndex++;
-                yield return new WaitForSeconds(0.00001f);
-            }
         }
         private void SelectNode(int nodeIndex)
         {
@@ -159,6 +128,9 @@ namespace FrontierDispatch.Unity
             }
                 
         }
+        #endregion
+
+        #region BASELINE / ALREADY EXISTED
         private void ResetColors()
         {
             foreach (GameObject view in Views.Values)
@@ -167,7 +139,6 @@ namespace FrontierDispatch.Unity
             }
             hasCheckedLocations = false;
         }
-
         private void Find()
         {
             if (_queries == null || !int.TryParse(_idText, out int id)) return;
@@ -183,6 +154,9 @@ namespace FrontierDispatch.Unity
             int outgoing = _queries.FindOutgoingConnections(id).Count;
             _status = $"Found {location.Name}. Outgoing connections: {outgoing}. Baseline queries scan the stored collections.";
         }
+        #endregion
+
+        #region PATH FINDING
         private void ShortestPathDijkstra(int startLocationID, int goalLocationID)
         {
             if (nonTraversableNodeIDs != null)
@@ -201,6 +175,8 @@ namespace FrontierDispatch.Unity
             if (nonTraversableNodeIDs != null)
                 nonTraversableNodeIDs.Clear();
 
+            ResetColors();
+
             currentNodeIndex = 0;
             AStarRouteFinder routeFinder = new AStarRouteFinder(_world);
             nonTraversableNodeIDs = new HashSet<int>();
@@ -215,9 +191,15 @@ namespace FrontierDispatch.Unity
 
             routeResult = routeFinder.FindRoute(startLocationID, goalLocationID, nonTraversableNodeIDs);
 
-            ResetColors();
+            foreach (var id in Views.Keys)
+            {
+                if (nonTraversableNodeIDs != null && nonTraversableNodeIDs.Contains(id))
+                    Views[id].GetComponent<Renderer>().material.color = new Color(0, 0, 0f);
+            }
             hasStartedRouteFinder = true;
         }
+        #endregion
+
         private void OnGUI()
         {
             GUILayout.BeginArea(new Rect(20f, 20f, 500f, 400f), GUI.skin.box);

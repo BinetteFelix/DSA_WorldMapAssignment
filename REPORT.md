@@ -72,6 +72,15 @@ When running a linear Find location by id scan over 2500 locations and 5000 iter
 
 Then when optimizing look-up time by switching to a dictionary lookup over the same amount of locations and same amount of iterations, the elapsed time is: 0.24 ms with an average time per iteration of 0.0000 ms, and world creation time of ~1.48 ms. 
 
+I made a minor change in priority queue that didn’t necessarily impact performance, but it changed how the algorithm works. The change was that the return type of Dequeue was a generic type (T) and I changed it to be a type ‘Entry’ and this greatly impacted the use cases of the Priority queue. When returning an entry instead of the generic type I can now get the Priority of the Entries in the Queue.
+
+I made a change in the Dijkstra’s algorithm that impacted the amount of memory used to create the world data. The change was that I removed a HashSet called ‘_validLocationIDs’, this Set was completely unnecessary since all locations in the adjacency list are valid, and if they weren’t valid the algorithm would have already caught that and skipped said location/node.
+
+When running the Unity visualization with the WorldDatasetFactory.CreateLarge(), the amount of batches were around 150000, and the same for drawcalls, this impacted performance like crazy, the change I made was to not create visual representations for the connections, as well as change the materials used for the nodes/locations, and marked them all as static, this saved some amount of batches but not a lot. So using the CreateLarge() version of world creation is not recommended when doing the visualization…
+
+I figured out that I could optimize the adjacency list creation by utilizing an array of List<Connection> instead of a dictionary, this decreased the memory allocation of the adjacency list creation by A LOT. I ran a test to see how much memory the dictionary creation allocated when creating a large world (CreateLarge()) and it returned that it allocated roughly ~4.75 MB of memory, while the Array of List<Connection> gave a memory allocation output of around 3.85 MB, this change means that instant look-up may be corrupted if the creation of id’s change its definition, but if it stays as is than this is simply a massive performance increase without downsides, since we have removed the dictionary hashing overhead, we have cut 0.90MB of allocated memory.
+The time of which it takes for the Dijkstra algorithm to run is essentially unchanged, or decreased at best.
+
 ## 7. Development reflection
 
 Describe one bug, wrong assumption, failed approach, or surprising result and how you investigated it.
@@ -100,3 +109,5 @@ Im using an ISet for listing blocked Location ID’s, and evaluating if a node can
 The difference between A* and Dijkstra can be measured in multiple different ways, but the difference between the ways the evaluate which node to traverse to is calculated based on the accumulated cost so far + the next edge’s travel cost + the Manhattan distance to the goal node from the current node, where as Dijkstra’s algorithm only gets the edge’s travel cost + the accumulated travel cost so far.
 
 One key difference between my Dijkstra and my A* is the fact that my Dijkstra evaluates whether the algorithm has already visited a node and cannot move back to said node, my A* doesn’t do that but instead checks if the next node being checked has a worse heuristic cost than the current node, and thus is able to move backward if there are blocked nodes, the blocked nodes implementation was not made in my Dijkstra’s route finder.
+
+When running the Dijkstra and A* with CreateMedium() the expandedCount is different, meaning they found the target, but had to check different amounts of nodes. Dijkstra expanded 2316 times, while A* expanded 1798 times, so a significant amount of expansions saved.

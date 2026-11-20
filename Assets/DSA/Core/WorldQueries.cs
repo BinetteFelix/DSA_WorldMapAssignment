@@ -24,12 +24,21 @@ namespace FrontierDispatch.Core
             _world = world ?? throw new ArgumentNullException(nameof(world));
         }
 
-        public Location? FindLocationById(int id)
+        public Location? FindLocationByIdInstant(int id)
         {
             if (_world.Locations.TryGetValue(id, out Location location))
                 return location;
             else
                 return null;
+        }
+        public Location? FindLocationByIdLinear(int id)
+        {
+            foreach (var location in _world.Locations.Values)
+            {
+                if (location.Id == id)
+                    return location;
+            }
+            return null;
         }
 
         public IReadOnlyList<Connection> FindOutgoingConnections(int fromLocationId)

@@ -20,7 +20,7 @@ namespace FrontierDispatch.Core
     public sealed class ReachabilityQuery
     {
         private readonly WorldData _world;
-        private readonly Dictionary<int, List<Connection>> _adjecencyList;
+        private readonly List<Connection>[] _adjecencyList;
 
         /// <summary>
         /// Creates a reachability query operating on the supplied world.
@@ -29,20 +29,20 @@ namespace FrontierDispatch.Core
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
 
-            _adjecencyList = new Dictionary<int, List<Connection>>(_world.Locations.Count);
+            _adjecencyList = new List<Connection>[_world.Locations.Count];
 
             foreach (var location in _world.Locations.Values)
             {
-                bool isNewLocation = (!_adjecencyList.ContainsKey(location.Id));
+                bool isNewLocation = (_adjecencyList[location.Id] == null);
                 if (isNewLocation)
-                    _adjecencyList[location.Id] = new List<Connection>();
+                    _adjecencyList[location.Id] = new List<Connection>(4);
             }
             foreach (var connection in _world.Connections)
             {
-                bool connectionHasFromLocation = (_adjecencyList.TryGetValue(connection.FromLocationId, out var list));
+                bool connectionHasFromLocation = (_adjecencyList[connection.FromLocationId] != null);
 
                 if (connectionHasFromLocation)
-                    list.Add(connection);
+                    _adjecencyList[connection.FromLocationId].Add(connection);
             }
         }
 
@@ -56,7 +56,7 @@ namespace FrontierDispatch.Core
         public IReadOnlyDictionary<int, int> FindReachable(int startLocationId, int maxTravelCost)
         {
             bool lessThanZeroMaxCost = (maxTravelCost < 0);
-            bool noStartLocation = (!_adjecencyList.ContainsKey(startLocationId));
+            bool noStartLocation = (_adjecencyList[startLocationId] == null);
 
             if (lessThanZeroMaxCost || noStartLocation)
                 return new Dictionary<int, int>();
@@ -80,26 +80,29 @@ namespace FrontierDispatch.Core
 
                 int currentCost = cheapestCosts[currentID];
 
-                foreach(Connection edge in _adjecencyList[currentID])
+                if (_adjecencyList[currentID] != null)
                 {
-                    bool locationVisited = (visited.Contains(edge.ToLocationId));
-
-                    if (locationVisited)
-                        continue;
-
-                    int newCost = currentCost + edge.TravelCost;
-                    bool toExpensive = newCost > maxTravelCost;
-
-                    if (toExpensive)
-                        continue;
-
-                    bool isNewCost = (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost));
-                    bool isCheaperCost = (newCost < existingCost);
-
-                    if (isNewCost || isCheaperCost)
+                    foreach (Connection? edge in _adjecencyList[currentID])
                     {
-                        cheapestCosts[edge.ToLocationId] = newCost;
-                        prioQueue.Enqueue(edge.ToLocationId, newCost);
+                        bool locationVisited = (visited.Contains(edge.ToLocationId));
+
+                        if (locationVisited)
+                            continue;
+
+                        int newCost = currentCost + edge.TravelCost;
+                        bool toExpensive = newCost > maxTravelCost;
+
+                        if (toExpensive)
+                            continue;
+
+                        bool isNewCost = (!cheapestCosts.TryGetValue(edge.ToLocationId, out int existingCost));
+                        bool isCheaperCost = (newCost < existingCost);
+
+                        if (isNewCost || isCheaperCost)
+                        {
+                            cheapestCosts[edge.ToLocationId] = newCost;
+                            prioQueue.Enqueue(edge.ToLocationId, newCost);
+                        }
                     }
                 }
             }

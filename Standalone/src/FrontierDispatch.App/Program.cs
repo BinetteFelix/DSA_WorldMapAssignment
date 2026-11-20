@@ -11,7 +11,7 @@ if (args.Length > 0 && args[0] == "--baseline")
 }
 if (args.Length > 0 && args[0] == "--baselinePlus")
 {
-    RunBaselinePlus();
+    RunBaselinePlusInstantLookUp();
     return;
 }
 if (args.Length > 0 && args[0] == "--baselineRouteFinderDijkstra")
@@ -45,8 +45,9 @@ while (locQ.Count > 0)
 RunDijkstra();
 RunReachabilityQuery();
 RunAStar();
-RunBaselinePlus();
+RunBaselinePlusInstantLookUp();
 RunRouteFinderBaseLineDijkstra();
+RunDijkstraMemoryBenchmark();
 
 static void RunDijkstra()
 {
@@ -163,7 +164,7 @@ static void RunBaseline()
         // repeatedly querying the same location.
         int id = (i * 997) % world.Locations.Count;
 
-        Location? location = queries.FindLocationById(id);
+        Location? location = queries.FindLocationByIdLinear(id);
         checksum += location?.Id ?? 0;
         checksum += queries.FindOutgoingConnections(id).Count;
     }
@@ -178,7 +179,7 @@ static void RunBaseline()
     Console.WriteLine($"Checksum: {checksum}");
     Console.WriteLine("Absolute time varies by machine. Keep this result for before/after comparison.");
 }
-static void RunBaselinePlus()
+static void RunBaselinePlusLinearScan()
 {
     // A. Measure world creation.
     var worldCreateSW = Stopwatch.StartNew();
@@ -216,7 +217,77 @@ static void RunBaselinePlus()
     {
         int id = (i * 997) % world.Locations.Count;
 
-        Location? location = queries.FindLocationById(id);
+        Location? location = queries.FindLocationByIdLinear(id);
+        checksum += location?.Id ?? 0;
+        //checksum += queries.FindOutgoingConnections(id).Count;
+    }
+
+    sw.Stop();
+
+    double elapsedMs = sw.Elapsed.TotalMilliseconds;
+    double averageMs = elapsedMs / iterations;
+
+    // Keep the final query object alive through the measurements.
+    GC.KeepAlive(queries);
+
+    Console.WriteLine();
+    Console.WriteLine("Frontier Dispatch - Performance workload");
+    Console.WriteLine("----------------------------------------");
+
+    Console.WriteLine("A. Loading and preparation");
+    Console.WriteLine($"World creation: {worldCreateSW.Elapsed.TotalMilliseconds:F2} ms");
+    Console.WriteLine($"WorldQueries preparation iterations: {preparationIterations}");
+    Console.WriteLine($"Preparation elapsed: {preparationElapsed:F2} ms");
+    Console.WriteLine($"Average preparation: {preparationAverage:F4} ms");
+    Console.WriteLine();
+
+    Console.WriteLine("B. Runtime code efficiency");
+    Console.WriteLine($"Locations: {world.Locations.Count:N0}");
+    Console.WriteLine($"Connections: {world.Connections.Count:N0}");
+    Console.WriteLine($"Iterations: {iterations:N0}");
+    Console.WriteLine($"Elapsed: {elapsedMs:F2} ms");
+    Console.WriteLine($"Average per iteration: {averageMs:F4} ms");
+    Console.WriteLine($"Checksum: {checksum:N0}");
+}
+static void RunBaselinePlusInstantLookUp()
+{
+    // A. Measure world creation.
+    var worldCreateSW = Stopwatch.StartNew();
+    WorldData world = WorldDatasetFactory.CreateMedium();
+    worldCreateSW.Stop();
+
+    // A. Measure WorldQueries preparation separately.
+    const int preparationIterations = 100;
+
+    // Warm-up before measurement.
+    WorldQueries queries = new WorldQueries(world);
+
+    GC.Collect();
+    GC.WaitForPendingFinalizers();
+    GC.Collect();
+
+    var preparationSW = Stopwatch.StartNew();
+
+    for (int i = 0; i < preparationIterations; i++)
+    {
+        queries = new WorldQueries(world);
+    }
+    preparationSW.Stop();
+
+    double preparationElapsed = preparationSW.Elapsed.TotalMilliseconds;
+    double preparationAverage = preparationElapsed / preparationIterations;
+
+    // B. Measure repeated runtime queries.
+    int checksum = 0;
+    const int iterations = 5000;
+
+    var sw = Stopwatch.StartNew();
+
+    for (int i = 0; i < iterations; ++i)
+    {
+        int id = (i * 997) % world.Locations.Count;
+
+        Location? location = queries.FindLocationByIdInstant(id);
         checksum += location?.Id ?? 0;
         //checksum += queries.FindOutgoingConnections(id).Count;
     }
@@ -252,7 +323,7 @@ static void RunRouteFinderBaseLineDijkstra()
 {
     // A. Create the world only once.
     var worldCreateSW = Stopwatch.StartNew();
-    WorldData world = WorldDatasetFactory.CreateMedium();
+    WorldData world = WorldDatasetFactory.CreateLarge();
     worldCreateSW.Stop();
 
     // B. Prepare WorldQueries only once.
@@ -261,18 +332,19 @@ static void RunRouteFinderBaseLineDijkstra()
     preparationSW.Stop();
 
     // C. Both algorithms share the same WorldQueries object.
-    var dijkstra = new DijkstraRouteFinder(world);
+    
     var reachability = new ReachabilityQuery(world);
+
+    var dijkstra = new DijkstraRouteFinder(world);
 
     // D. Measure Dijkstra.
     var dijkstraSW = Stopwatch.StartNew();
-
     var routeResult = dijkstra.FindRoute(0, world.Locations.Count - 1);
 
     dijkstraSW.Stop();
 
     // E. Measure Reachability.
-    const int maxTravelCost = 100;
+    const int maxTravelCost = 1000;
 
     var reachabilitySW = Stopwatch.StartNew();
 
@@ -307,4 +379,24 @@ static void RunRouteFinderBaseLineDijkstra()
     Console.WriteLine($"Locations: {world.Locations.Count:N0}");
     Console.WriteLine($"Connections: {world.Connections.Count:N0}");
     Console.WriteLine("Both algorithms use the same WorldQueries instance.");
+}
+static void RunDijkstraMemoryBenchmark()
+{
+    Console.WriteLine("---- Memory Benchmark Dijkstra ----");
+
+    WorldData warmUpWorld = WorldDatasetFactory.CreateLarge();
+    _ = new DijkstraRouteFinder(warmUpWorld);
+
+    long bytesBeforeCreation = GC.GetAllocatedBytesForCurrentThread();
+    WorldData world = WorldDatasetFactory.CreateLarge();
+    long bytesAfterCreation = GC.GetAllocatedBytesForCurrentThread();
+
+    var routeFinder = new DijkstraRouteFinder(world);
+    long afterRouteFinder = GC.GetAllocatedBytesForCurrentThread();
+
+    double totalBytesCreation = bytesAfterCreation - bytesBeforeCreation;
+    double totalBytesAdjecencyList = afterRouteFinder - bytesAfterCreation;
+
+    Console.WriteLine($"Memory allocated for World Creation: {totalBytesCreation / 1000000:F2} MB");
+    Console.WriteLine($"Memory allocated for Adjecency list Creation: {totalBytesAdjecencyList / 1000000:F2} MB");
 }
