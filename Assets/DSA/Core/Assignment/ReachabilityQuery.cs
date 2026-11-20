@@ -29,7 +29,12 @@ namespace FrontierDispatch.Core
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
 
-            _adjecencyList = new List<Connection>[_world.Locations.Count];
+            int maxId = -1;
+            foreach (var location in _world.Locations.Values)
+                if (location.Id > maxId)
+                    maxId = location.Id;
+
+            _adjecencyList = new List<Connection>[maxId + 1];
 
             foreach (var location in _world.Locations.Values)
             {
@@ -56,9 +61,9 @@ namespace FrontierDispatch.Core
         public IReadOnlyDictionary<int, int> FindReachable(int startLocationId, int maxTravelCost)
         {
             bool lessThanZeroMaxCost = (maxTravelCost < 0);
-            bool noStartLocation = (_adjecencyList[startLocationId] == null);
+            bool startLocationOutOfBounds = (startLocationId >= _adjecencyList.Length || startLocationId < 0);
 
-            if (lessThanZeroMaxCost || noStartLocation)
+            if (lessThanZeroMaxCost || startLocationOutOfBounds)
                 return new Dictionary<int, int>();
 
             var cheapestCosts = new Dictionary<int, int>

@@ -143,7 +143,7 @@ namespace FrontierDispatch.Unity
         {
             if (_queries == null || !int.TryParse(_idText, out int id)) return;
             ResetColors();
-            Location? location = _queries.FindLocationById(id);
+            Location? location = _queries.FindLocationByIdInstant(id);
             if (location == null)
             {
                 _status = $"Location {id} not found.";

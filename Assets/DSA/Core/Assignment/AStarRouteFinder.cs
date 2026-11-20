@@ -36,7 +36,6 @@ namespace FrontierDispatch.Core
                 nonTraversable != null && nonTraversable.Contains(startLocationID) ||
                 nonTraversable != null && nonTraversable.Contains(goalLocationID))
             {
-                Console.WriteLine("Failed because start or goal didn't exist");
                 return new RouteResult
                 (
                     found: false,
@@ -48,7 +47,6 @@ namespace FrontierDispatch.Core
             }
             if  (startLocationID == goalLocationID)
             {
-                Console.WriteLine("Failed because start was goal");
                 return new RouteResult
                 (
                     found: true,
@@ -133,7 +131,6 @@ namespace FrontierDispatch.Core
                 }
                 #endregion
             }
-            Console.WriteLine("Failed because goal didn't exist");
             return new RouteResult
             (
                 found: false,

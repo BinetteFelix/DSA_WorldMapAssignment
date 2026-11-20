@@ -77,7 +77,7 @@ namespace FrontierDispatch.Core
 
         #region QUEUE ORDER MOVEMENT
         /// <summary>
-        /// Moves the item with Larger priority Up the heap
+        /// Moves the item with Smaller priority Up the heap
         /// </summary>
         private void MoveUp(int index)
         {
@@ -98,7 +98,7 @@ namespace FrontierDispatch.Core
         }
 
         /// <summary>
-        /// Moves the item with Smaller priority Down the heap
+        /// Moves the item with Larger priority Down the heap
         /// </summary>
         private void MoveDown(int index)
         {

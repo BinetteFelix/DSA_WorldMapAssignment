@@ -16,7 +16,7 @@ if (args.Length > 0 && args[0] == "--baselinePlus")
 }
 if (args.Length > 0 && args[0] == "--baselineRouteFinderDijkstra")
 {
-    RunRouteFinderBaseLineDijkstra();
+    RunRouteFinderBaseLine();
     return;
 }
 
@@ -46,7 +46,7 @@ RunDijkstra();
 RunReachabilityQuery();
 RunAStar();
 RunBaselinePlusInstantLookUp();
-RunRouteFinderBaseLineDijkstra();
+RunRouteFinderBaseLine();
 RunDijkstraMemoryBenchmark();
 
 static void RunDijkstra()
@@ -319,7 +319,7 @@ static void RunBaselinePlusInstantLookUp()
     Console.WriteLine($"Average per iteration: {averageMs:F4} ms");
     Console.WriteLine($"Checksum: {checksum:N0}");
 }
-static void RunRouteFinderBaseLineDijkstra()
+static void RunRouteFinderBaseLine()
 {
     // A. Create the world only once.
     var worldCreateSW = Stopwatch.StartNew();
@@ -336,6 +336,7 @@ static void RunRouteFinderBaseLineDijkstra()
     var reachability = new ReachabilityQuery(world);
 
     var dijkstra = new DijkstraRouteFinder(world);
+    var aStar = new AStarRouteFinder(world);
 
     // D. Measure Dijkstra.
     var dijkstraSW = Stopwatch.StartNew();
@@ -343,7 +344,13 @@ static void RunRouteFinderBaseLineDijkstra()
 
     dijkstraSW.Stop();
 
-    // E. Measure Reachability.
+    // e. Measure Dijkstra.
+    var sStarSW = Stopwatch.StartNew();
+    var aStarRouteResult = aStar.FindRoute(0, world.Locations.Count - 1, new HashSet<int>());
+
+    sStarSW.Stop();
+
+    // f. Measure Reachability.
     const int maxTravelCost = 1000;
 
     var reachabilitySW = Stopwatch.StartNew();
@@ -369,13 +376,17 @@ static void RunRouteFinderBaseLineDijkstra()
     Console.WriteLine($"Elapsed: {dijkstraSW.Elapsed.TotalMilliseconds:F2} ms");
     Console.WriteLine();
 
-    Console.WriteLine("C. Reachability");
+    Console.WriteLine("C. A-star");
+    Console.WriteLine($"Elapsed: {sStarSW.Elapsed.TotalMilliseconds:F2} ms");
+    Console.WriteLine();
+
+    Console.WriteLine("D. Reachability");
     Console.WriteLine($"Maximum travel cost: {maxTravelCost}");
     Console.WriteLine($"Reachable locations: {reachableLocations.Count}");
     Console.WriteLine($"Elapsed: {reachabilitySW.Elapsed.TotalMilliseconds:F2} ms");
     Console.WriteLine();
 
-    Console.WriteLine("D. Shared world information");
+    Console.WriteLine("E. Shared world information");
     Console.WriteLine($"Locations: {world.Locations.Count:N0}");
     Console.WriteLine($"Connections: {world.Connections.Count:N0}");
     Console.WriteLine("Both algorithms use the same WorldQueries instance.");

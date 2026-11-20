@@ -26,7 +26,13 @@ namespace FrontierDispatch.Core
         public DijkstraRouteFinder(WorldData world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
-            _adjecencyList = new List<Connection>[_world.Locations.Count];
+
+            int maxId = -1;
+            foreach (var location in _world.Locations.Values)
+                if (location.Id > maxId)
+                    maxId = location.Id;
+            
+            _adjecencyList = new List<Connection>[maxId + 1];
 
             foreach (var location in _world.Locations.Values)
             {
@@ -38,7 +44,6 @@ namespace FrontierDispatch.Core
                 if (_adjecencyList[connection.FromLocationId] != null)
                     _adjecencyList[connection.FromLocationId].Add(connection);
             }
-                
         }
 
         /// <summary>
@@ -71,7 +76,7 @@ namespace FrontierDispatch.Core
                 );
 
             Dictionary<int, int> costs = new Dictionary<int, int>();
-            Dictionary<int, int> previousNode = new Dictionary<int, int>();
+            Dictionary<int, int> previousNodes = new Dictionary<int, int>();
             HashSet<int> visited = new HashSet<int>();
             MinPriorityQueue<int> prioQueue = new MinPriorityQueue<int>();
 
@@ -91,7 +96,7 @@ namespace FrontierDispatch.Core
 
                 if (currentID == goalLocationId)
                 {
-                    var path = ReconstructPath(previousNode, startLocationId, goalLocationId);
+                    var path = ReconstructPath(previousNodes, startLocationId, goalLocationId);
 
                     return new RouteResult
                     (
@@ -116,7 +121,7 @@ namespace FrontierDispatch.Core
                         if (!costs.TryGetValue(edge.ToLocationId, out int existingCost) || newCost < existingCost)
                         {
                             costs[edge.ToLocationId] = newCost;
-                            previousNode[edge.ToLocationId] = currentID;
+                            previousNodes[edge.ToLocationId] = currentID;
                             prioQueue.Enqueue(edge.ToLocationId, newCost);
                         }
                     }
@@ -134,7 +139,7 @@ namespace FrontierDispatch.Core
         /// Returns the list of locations visited to get the shortest path.
         /// </summary>
         /// <returns></returns>
-        private static IReadOnlyList<int> ReconstructPath(Dictionary<int, int> previousNode, int startID, int goalID)
+        private static IReadOnlyList<int> ReconstructPath(Dictionary<int, int> previousNodes, int startID, int goalID)
         {
             var path = new List<int>();
             int current = goalID;
@@ -142,7 +147,7 @@ namespace FrontierDispatch.Core
             while (current != startID)
             {
                 path.Add(current);
-                current = previousNode[current];
+                current = previousNodes[current];
             }
 
             path.Add(startID);
